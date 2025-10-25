@@ -1,0 +1,71 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model Driver {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  email     String   @unique
+  password  String
+  name      String
+  phone     Int
+  address   String
+  createdAt DateTime @default(now())
+
+  Vehicle     Vehicle[]
+  Reservation Reservation[]
+}
+
+model Admin {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+
+  ParkingHouse ParkingHouse[]
+}
+
+model ParkingHouse {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  admin     Admin    @relation(fields: [adminId], references: [id])
+  adminId   String   @db.ObjectId
+  address   String
+  price     Int
+  createdAt DateTime @default(now())
+
+  ParkingSlot ParkingSlot[]
+}
+
+model ParkingSlot {
+  id          String       @id @default(auto()) @map("_id") @db.ObjectId
+  parkHouse   ParkingHouse @relation(fields: [parkHouseId], references: [id])
+  parkHouseId String       @db.ObjectId
+  address     String
+  createdAt   DateTime     @default(now())
+
+  Reservation Reservation[]
+}
+
+model Vehicle {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  driver    Driver   @relation(fields: [driverId], references: [id])
+  driverId  String   @db.ObjectId
+  SPZ       String
+  type      String
+  createdAt DateTime @default(now())
+}
+
+model Reservation {
+  id         String      @id @default(auto()) @map("_id") @db.ObjectId
+  driver     Driver      @relation(fields: [driverId], references: [id])
+  driverId   String      @db.ObjectId
+  parkSlot   ParkingSlot @relation(fields: [parkSlotId], references: [id])
+  parkSlotId String      @db.ObjectId
+  start      DateTime
+  end        DateTime
+  createdAt  DateTime    @default(now())
+}
