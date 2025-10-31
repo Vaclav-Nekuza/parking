@@ -1,0 +1,51 @@
+openapi: 3.0.0
+info:
+  title: Parking API
+  version: 1.0.0
+  description: Parking API Swagger documentation
+servers:
+  - url: http://localhost:3000
+
+paths:
+  /api/parkinglots:
+    get:
+      summary: Get a list of all parking lots
+      description: Returns a list of all parking lots. (NOT IMPLEMENTED YET)
+      responses:
+        '200':
+          description: Successful response with an array of parking lots
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      example: "1"
+                    name:
+                      type: string
+                      example: "Main Parking Lot"
+                    location:
+                      type: string
+                      example: "Prague, Square"
+    post:
+      summary: Create a new parking lot
+      description: Adds a new parking lot to the system. (NOT IMPLEMENTED YET)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: "New Parking Lot"
+                location:
+                  type: string
+                  example: "Prague, Vinohrady"
+      responses:
+        '201':
+          description: Parking lot created
