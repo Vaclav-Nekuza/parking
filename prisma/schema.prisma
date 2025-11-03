@@ -1,3 +1,5 @@
+// Prisma schema file
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,6 +15,7 @@ model Driver {
   password  String
   name      String
   phone     Int
+  phone     String
   address   String
   createdAt DateTime @default(now())
 

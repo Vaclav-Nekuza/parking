@@ -14,4 +14,18 @@ export const prisma = globalForPrisma.prisma ?? new PrismaClient();
 
 // pozn.: v produkci se to dělat nemusí, ale v dev to uložím do globalThis,
 // ať se při každém reloadu netvoří nová instance
+import { config } from "./config";
+
+const globalForPrisma = global as unknown as { prisma: PrismaClient };
+
+export const prisma =
+    globalForPrisma.prisma ||
+    new PrismaClient({
+        datasources: {
+            db: {
+                url: config.databaseUrl
+            }
+        },
+    });
+
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
