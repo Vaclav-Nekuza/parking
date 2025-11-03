@@ -48,9 +48,14 @@ export async function POST(req: Request) {
       });
 
       return NextResponse.json(created, { status: 201 });
-    } catch (e: any) {
-      if (e?.code === "P2002")
-        return NextResponse.json({ error: "Parking lot with this address already exists" }, { status: 409 });
+       } catch (e: unknown) {
+      if ((e as { code?: string })?.code === "P2002") {
+        return NextResponse.json(
+          { error: "Parking lot with this address already exists" },
+          { status: 409 }
+        );
+      }
+
       console.error("POST /api/parkinglots db error:", e);
       return NextResponse.json({ error: "Failed to create parking lot" }, { status: 500 });
     } finally {
