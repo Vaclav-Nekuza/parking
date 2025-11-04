@@ -12,8 +12,10 @@ export default function Home() {
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login");
+    } else if (session?.user?.role === "pending") {
+      router.push("/setup-account");
     }
-  }, [status, router]);
+  }, [status, session, router]);
 
   if (status === "loading") {
     return (
@@ -74,12 +76,7 @@ export default function Home() {
                   </span>
                 </div>
               </div>
-              <button
-                onClick={() => router.push("/role-selection")}
-                className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1 border rounded"
-              >
-                Switch Role
-              </button>
+
               <button
                 onClick={() => signOut()}
                 className="text-sm text-gray-500 hover:text-gray-700"
