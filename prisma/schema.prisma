@@ -9,10 +9,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// NextAuth.js required models
+// NextAuth.js required models - using polymorphic relationships
 model Account {
   id                String  @id @default(auto()) @map("_id") @db.ObjectId
   userId            String  @db.ObjectId
+  userType          String? // "driver" or "admin" - optional for backward compatibility
   type              String
   provider          String
   providerAccountId String
@@ -24,37 +25,26 @@ model Account {
   id_token          String? @db.String
   session_state     String?
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Polymorphic relations
+  driver Driver? @relation(fields: [userId], references: [id], onDelete: Cascade)
+  admin  Admin?  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+  @@index([userId, userType])
 }
 
 model Session {
   id           String   @id @default(auto()) @map("_id") @db.ObjectId
   sessionToken String   @unique
   userId       String   @db.ObjectId
+  userType     String?  // "driver" or "admin" - optional for backward compatibility
   expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
 
-model User {
-  id            String    @id @default(auto()) @map("_id") @db.ObjectId
-  name          String?
-  email         String    @unique
-  emailVerified DateTime?
-  image         String?
-  role          String    @default("driver") // "driver" or "admin"
-  phone         String?
-  address       String?
-  createdAt     DateTime  @default(now())
+  // Polymorphic relations
+  driver Driver? @relation(fields: [userId], references: [id], onDelete: Cascade)
+  admin  Admin?  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  accounts    Account[]
-  sessions    Session[]
-  Vehicle     Vehicle[]
-  Reservation Reservation[]
-  
-  // For admin role
-  ParkingHouse ParkingHouse[]
+  @@index([userId, userType])
 }
 
 model VerificationToken {
@@ -67,33 +57,44 @@ model VerificationToken {
 }
 
 model Driver {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  email     String   @unique
-  password  String
-  name      String
-  phone     String
-  address   String
-  createdAt DateTime @default(now())
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  email         String    @unique
+  emailVerified DateTime?
+  name          String?
+  image         String?
+  phone         String?
+  address       String?
+  createdAt     DateTime  @default(now())
 
+  // NextAuth relations
+  accounts Account[]
+  sessions Session[]
+
+  // Driver-specific relations
   Vehicle     Vehicle[]
   Reservation Reservation[]
 }
 
 model Admin {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  email     String   @unique
-  password  String
-  createdAt DateTime @default(now())
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  email         String    @unique
+  emailVerified DateTime?
+  name          String?
+  image         String?
+  createdAt     DateTime  @default(now())
 
+  // NextAuth relations
+  accounts Account[]
+  sessions Session[]
+
+  // Admin-specific relations
   ParkingHouse ParkingHouse[]
 }
 
 model ParkingHouse {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  user      User     @relation(fields: [userId], references: [id])
-  userId    String   @db.ObjectId
-  admin     Admin?   @relation(fields: [adminId], references: [id])
-  adminId   String?  @db.ObjectId
+  admin     Admin    @relation(fields: [adminId], references: [id])
+  adminId   String   @db.ObjectId
   address   String
   price     Int
   createdAt DateTime @default(now())
@@ -113,10 +114,8 @@ model ParkingSlot {
 
 model Vehicle {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  user      User     @relation(fields: [userId], references: [id])
-  userId    String   @db.ObjectId
-  driver    Driver?  @relation(fields: [driverId], references: [id])
-  driverId  String?  @db.ObjectId
+  driver    Driver   @relation(fields: [driverId], references: [id])
+  driverId  String   @db.ObjectId
   SPZ       String
   type      String
   createdAt DateTime @default(now())
@@ -124,10 +123,8 @@ model Vehicle {
 
 model Reservation {
   id         String      @id @default(auto()) @map("_id") @db.ObjectId
-  user       User        @relation(fields: [userId], references: [id])
-  userId     String      @db.ObjectId
-  driver     Driver?     @relation(fields: [driverId], references: [id])
-  driverId   String?     @db.ObjectId
+  driver     Driver      @relation(fields: [driverId], references: [id])
+  driverId   String      @db.ObjectId
   parkSlot   ParkingSlot @relation(fields: [parkSlotId], references: [id])
   parkSlotId String      @db.ObjectId
   start      DateTime

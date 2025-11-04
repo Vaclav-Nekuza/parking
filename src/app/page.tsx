@@ -61,10 +61,25 @@ export default function Home() {
                     className="rounded-full"
                   />
                 )}
-                <span className="text-sm font-medium text-gray-900">
-                  {session.user?.name}
-                </span>
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium text-gray-900">
+                    {session.user?.name}
+                  </span>
+                  <span className={`text-xs px-2 py-1 rounded-full ${
+                    session.user?.role === "admin" 
+                      ? "bg-green-100 text-green-800" 
+                      : "bg-blue-100 text-blue-800"
+                  }`}>
+                    {session.user?.role?.toUpperCase() || "DRIVER"}
+                  </span>
+                </div>
               </div>
+              <button
+                onClick={() => router.push("/role-selection")}
+                className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1 border rounded"
+              >
+                Switch Role
+              </button>
               <button
                 onClick={() => signOut()}
                 className="text-sm text-gray-500 hover:text-gray-700"
@@ -88,97 +103,201 @@ export default function Home() {
             </p>
           </div>
 
-          {/* Quick actions */}
-          <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            <div className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="p-6">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <svg
-                      className="h-8 w-8 text-blue-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                      />
-                    </svg>
+          {/* Quick actions - Different for Driver vs Admin */}
+          <div className="mt-10">
+            {session.user?.role === "admin" ? (
+              // Admin Dashboard
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-6">Admin Dashboard</h3>
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className="bg-white overflow-hidden shadow rounded-lg">
+                    <div className="p-6">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0">
+                          <svg
+                            className="h-8 w-8 text-green-600"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                            />
+                          </svg>
+                        </div>
+                        <div className="ml-4">
+                          <h3 className="text-lg font-medium text-gray-900">
+                            Manage Parking Houses
+                          </h3>
+                          <p className="text-sm text-gray-500">
+                            Add and configure your parking facilities
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="ml-4">
-                    <h3 className="text-lg font-medium text-gray-900">
-                      New Reservation
-                    </h3>
-                    <p className="text-sm text-gray-500">
-                      Book a parking spot
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
 
-            <div className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="p-6">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <svg
-                      className="h-8 w-8 text-green-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                      />
-                    </svg>
+                  <div className="bg-white overflow-hidden shadow rounded-lg">
+                    <div className="p-6">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0">
+                          <svg
+                            className="h-8 w-8 text-blue-600"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                            />
+                          </svg>
+                        </div>
+                        <div className="ml-4">
+                          <h3 className="text-lg font-medium text-gray-900">
+                            View Reservations
+                          </h3>
+                          <p className="text-sm text-gray-500">
+                            Monitor bookings and occupancy
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="ml-4">
-                    <h3 className="text-lg font-medium text-gray-900">
-                      My Reservations
-                    </h3>
-                    <p className="text-sm text-gray-500">
-                      View active bookings
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
 
-            <div className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="p-6">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <svg
-                      className="h-8 w-8 text-purple-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                      />
-                    </svg>
-                  </div>
-                  <div className="ml-4">
-                    <h3 className="text-lg font-medium text-gray-900">
-                      My Vehicles
-                    </h3>
-                    <p className="text-sm text-gray-500">
-                      Manage your vehicles
-                    </p>
+                  <div className="bg-white overflow-hidden shadow rounded-lg">
+                    <div className="p-6">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0">
+                          <svg
+                            className="h-8 w-8 text-purple-600"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
+                        </div>
+                        <div className="ml-4">
+                          <h3 className="text-lg font-medium text-gray-900">
+                            Pricing & Analytics
+                          </h3>
+                          <p className="text-sm text-gray-500">
+                            Set prices and view revenue reports
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              // Driver Dashboard
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-6">Driver Dashboard</h3>
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className="bg-white overflow-hidden shadow rounded-lg">
+                    <div className="p-6">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0">
+                          <svg
+                            className="h-8 w-8 text-blue-600"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                            />
+                          </svg>
+                        </div>
+                        <div className="ml-4">
+                          <h3 className="text-lg font-medium text-gray-900">
+                            New Reservation
+                          </h3>
+                          <p className="text-sm text-gray-500">
+                            Book a parking spot
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white overflow-hidden shadow rounded-lg">
+                    <div className="p-6">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0">
+                          <svg
+                            className="h-8 w-8 text-green-600"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                            />
+                          </svg>
+                        </div>
+                        <div className="ml-4">
+                          <h3 className="text-lg font-medium text-gray-900">
+                            My Reservations
+                          </h3>
+                          <p className="text-sm text-gray-500">
+                            View active bookings
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white overflow-hidden shadow rounded-lg">
+                    <div className="p-6">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0">
+                          <svg
+                            className="h-8 w-8 text-purple-600"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                            />
+                          </svg>
+                        </div>
+                        <div className="ml-4">
+                          <h3 className="text-lg font-medium text-gray-900">
+                            My Vehicles
+                          </h3>
+                          <p className="text-sm text-gray-500">
+                            Manage your vehicles
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* User info */}
