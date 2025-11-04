@@ -1,31 +1,13 @@
 import { PrismaClient } from "@prisma/client";
 
-// pozn.: kvůli Next.js se při vývoji (HMR) může vytvářet víc instancí Prisma,
-// proto si ji uložím do globalThis, aby se použila pořád ta samá
+const prismaClientSingleton = () => {
+  return new PrismaClient();
+};
+
 declare global {
-	var prisma: PrismaClient | undefined;
+  var prisma: undefined | ReturnType<typeof prismaClientSingleton>;
 }
 
-//tady si jen typuju globalThis, aby TS neházel chyby
-const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
+export const prisma = globalThis.prisma ?? prismaClientSingleton();
 
-//když už Prisma existuje, použiju ji, jinak vytvořím novou
-export const prisma = globalForPrisma.prisma ?? new PrismaClient();
-
-// pozn.: v produkci se to dělat nemusí, ale v dev to uložím do globalThis,
-// ať se při každém reloadu netvoří nová instance
-import { config } from "./config";
-
-const globalForPrisma = global as unknown as { prisma: PrismaClient };
-
-export const prisma =
-    globalForPrisma.prisma ||
-    new PrismaClient({
-        datasources: {
-            db: {
-                url: config.databaseUrl
-            }
-        },
-    });
-
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+if (process.env.NODE_ENV !== "production") globalThis.prisma = prisma;
