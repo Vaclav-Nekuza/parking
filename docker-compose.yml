@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: parking-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - parking-network
+    command: mongod --replSet rs0 --bind_ip_all
+
+  mongo-setup:
+    image: mongo:7.0
+    container_name: parking-mongo-setup
+    restart: "no"
+    networks:
+      - parking-network
+    depends_on:
+      - mongodb
+    entrypoint:
+      - bash
+      - -c
+      - |
+        echo "Waiting for MongoDB to start..."
+        sleep 15
+        echo "Checking replica set configuration..."
+        mongosh --host mongodb:27017 --eval "
+        try {
+          var status = rs.status();
+          print('Replica set found');
+          
+          // Check if we need to reconfigure to use localhost
+          var cfg = rs.conf();
+          if (cfg.members[0].host === 'mongodb:27017') {
+            print('Reconfiguring replica set to use localhost...');
+            cfg.members[0].host = 'localhost:27017';
+            rs.reconfig(cfg, {force: true});
+            print('Replica set reconfigured to localhost:27017');
+          } else {
+            print('Replica set already configured correctly');
+          }
+        } catch(e) {
+          print('Initializing new replica set with localhost...');
+          rs.initiate({
+            _id: 'rs0',
+            members: [{ _id: 0, host: 'localhost:27017' }]
+          });
+          print('Replica set initialized with localhost:27017');
+        }"
+
+  mongo-express:
+    image: mongo-express:1.0.2
+    container_name: parking-mongo-express
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_URL: mongodb://mongodb:27017/
+      ME_CONFIG_BASICAUTH: false
+    depends_on:
+      - mongodb
+      - mongo-setup
+    networks:
+      - parking-network
+
+volumes:
+  mongodb_data:
+    driver: local
+
+networks:
+  parking-network:
+    driver: bridge
