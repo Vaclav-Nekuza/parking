@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-// GET /api/vehicles or /api/vehicles?id=... or /api/vehicles?spz=...
+// GET /api/vehicle-registration
+// GET /api/vehicle-registration?id=...
+// GET /api/vehicle-registration?spz=...
 export async function GET(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
@@ -15,7 +17,7 @@ export async function GET(request: Request) {
         }
 
         if (spzReq) {
-            const vehicle = await prisma.vehicle.findFirstOrThrow({ where: { SPZ:spzReq } });
+            const vehicle = await prisma.vehicle.findFirst({ where: { SPZ:spzReq } });
             if (!vehicle) return NextResponse.json({ error: "Vehicle not found" }, { status: 404 });
             return NextResponse.json(vehicle, { status: 200 });
         }
@@ -29,7 +31,12 @@ export async function GET(request: Request) {
     }
 }
 
-// POST /api/vehicles
+// POST /api/vehicle-registration
+// {
+// "spz": spz
+// "driverId": driverId
+// "type": type
+// }
 export async function POST(request: Request) {
     try {
         const data = await request.json();
@@ -42,7 +49,7 @@ export async function POST(request: Request) {
             );
         }
 
-        const existing = await prisma.vehicle.findFirstOrThrow({ where: { SPZ: spzReq } });
+        const existing = await prisma.vehicle.findFirst({ where: { SPZ: spzReq } });
         if (existing) {
             return NextResponse.json(
                 { error: "Vehicle with this SPZ already exists" },
