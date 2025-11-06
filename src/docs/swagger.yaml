@@ -49,3 +49,107 @@ paths:
       responses:
         '201':
           description: Parking lot created
+
+  /api/vehicle-registration:
+    get:
+      summary: Get vehicle registration(s)
+      description: >
+        Retrieve vehicle registration data.
+        You can request all registrations, or filter by `id` or `spz` query parameters.
+      parameters:
+        - in: query
+          name: id
+          schema:
+            type: string
+          required: false
+          description: Filter by registration ID
+          example: "65f23a0e9b2c1e0012a34567"
+        - in: query
+          name: spz
+          schema:
+            type: string
+          required: false
+          description: Filter by SPZ (vehicle plate number)
+          example: "8A3 4567"
+      responses:
+        '200':
+          description: Successful response with registration(s)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/VehicleRegistration'
+                  - $ref: '#/components/schemas/VehicleRegistration'
+        '400':
+          description: Invalid query parameters
+        '404':
+          description: Registration not found
+        '500':
+          description: Internal server error
+
+    post:
+      summary: Create a new vehicle registration
+      description: Registers a new vehicle in the system.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VehicleRegistrationCreate'
+      responses:
+        '201':
+          description: Vehicle registration created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VehicleRegistration'
+        '400':
+          description: Invalid request body
+        '409':
+          description: Vehicle already registered
+        '500':
+          description: Internal server error
+
+components:
+  schemas:
+    VehicleRegistration:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "65f23a0e9b2c1e0012a34567"
+        spz:
+          type: string
+          example: "8A3 4567"
+        driverId:
+          type: string
+          example: "driver_001"
+        type:
+          type: string
+          example: "personal"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2025-11-06T10:15:30Z"
+
+    VehicleRegistrationCreate:
+      type: object
+      required:
+        - spz
+        - driverId
+        - type
+      properties:
+        spz:
+          type: string
+          description: Vehicle license plate number
+          example: "8A3 4567"
+        driverId:
+          type: string
+          description: ID of the driver
+          example: "driver_001"
+        type:
+          type: string
+          description: Type of vehicle (e.g. personal, truck, electric)
+          example: "personal"
