@@ -259,26 +259,49 @@ export function Dashboard() {
           <div className="mt-8">
             <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
               <div className="px-4 py-5 sm:p-6">
-                <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white">
-                  User Information
-                </h3>
-                <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2">
+                <div className="flex items-center space-x-4 mb-5">
+                  {user.image && (
+                    <img
+                      src={user.image}
+                      alt={user.name || 'User avatar'}
+                      className="w-16 h-16 rounded-full"
+                    />
+                  )}
+                  <div>
+                    <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white">
+                      User Information
+                    </h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      Signed in with Google OAuth
+                    </p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                   <div>
                     <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Name</dt>
-                    <dd className="mt-1 text-sm text-gray-900 dark:text-white">{user.name}</dd>
+                    <dd className="mt-1 text-sm text-gray-900 dark:text-white">{user.name || 'Not provided'}</dd>
                   </div>
                   <div>
                     <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Email</dt>
-                    <dd className="mt-1 text-sm text-gray-900 dark:text-white">{user.email}</dd>
+                    <dd className="mt-1 text-sm text-gray-900 dark:text-white">{user.email || 'Not provided'}</dd>
                   </div>
                   <div>
-                    <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Role</dt>
-                    <dd className="mt-1 text-sm text-gray-900 dark:text-white capitalize">{user.role}</dd>
+                    <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Current Role</dt>
+                    <dd className="mt-1">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 capitalize">
+                        {user.role}
+                      </span>
+                    </dd>
                   </div>
                   <div>
                     <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">User ID</dt>
-                    <dd className="mt-1 text-sm text-gray-900 dark:text-white">{user.id}</dd>
+                    <dd className="mt-1 text-sm text-gray-900 dark:text-white font-mono text-xs">{user.id}</dd>
                   </div>
+                </div>
+                <div className="mt-5 pt-5 border-t border-gray-200 dark:border-gray-700">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    💡 To switch roles, please sign out and sign in again with your desired role.
+                  </p>
                 </div>
               </div>
             </div>

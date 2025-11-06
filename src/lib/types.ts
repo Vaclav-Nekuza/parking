@@ -5,11 +5,15 @@ export interface User {
   role: UserRole;
   name?: string;
   email?: string;
+  image?: string;
 }
 
 export interface SessionContextType {
   user: User | null;
-  login: (role: UserRole) => void;
-  logout: () => void;
+  login: (role: UserRole) => Promise<void>;
+  logout: () => Promise<void>;
   isAuthenticated: boolean;
+  nextAuthSession?: any;
+  isOAuthAuthenticated?: boolean;
+  isLoading?: boolean;
 }
