@@ -14,63 +14,134 @@ export function Dashboard() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-            Access Denied
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-4">
+      <main className="min-h-screen bg-white">
+        <div className="max-w-xl mx-auto px-6 py-10">
+          <h1 className="text-5xl leading-tight font-extrabold tracking-tight text-black mb-1">
+            Access
+            <br />
+            Denied
+          </h1>
+          <p className="text-gray-500 mb-8">
             Please log in to access the dashboard.
           </p>
           <button
-            onClick={() => router.push('/')}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            onClick={() => router.push('/login/driver')}
+            className="rounded-2xl px-8 py-3 bg-blue-400 text-white font-medium hover:opacity-90"
           >
             Go to Login
           </button>
         </div>
-      </div>
+      </main>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Header */}
-      <header className="bg-white dark:bg-gray-800 shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div className="flex items-center">
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                ParkingApp Dashboard
-              </h1>
+    <main className="min-h-screen bg-white">
+      <div className="max-w-xl mx-auto px-6 py-10">
+        {/* Header */}
+        <div className="flex justify-between items-start mb-8">
+          <div>
+            <h1 className="text-5xl leading-tight font-extrabold tracking-tight text-black mb-1">
+              Dashboard
+            </h1>
+            <p className="text-gray-500">
+              Welcome back, {user.name}
+            </p>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="rounded-2xl px-6 py-3 border border-red-300 text-red-600 bg-red-50 hover:bg-red-100 font-medium text-sm"
+          >
+            Logout
+          </button>
+        </div>
+
+        {/* Role Badge */}
+        <div className="mb-8">
+          <div className="bg-white border rounded-2xl px-4 py-3">
+            <div className="text-sm font-medium text-gray-700 mb-1">
+              Current Role
             </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600 dark:text-gray-400">
-                Welcome, {user.name}
-              </span>
-              <button
-                onClick={handleLogout}
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
-              >
-                Logout
-              </button>
+            <div className="text-lg font-semibold capitalize text-black">
+              {user.role}
             </div>
           </div>
         </div>
-      </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          {/* Role Badge */}
-          <div className="mb-8">
-            <div className="inline-flex items-center px-6 py-3 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-              <span className="w-2 h-2 bg-blue-600 rounded-full mr-2"></span>
-              You are logged in as: <strong className="ml-1 capitalize">{user.role}</strong>
+        {/* Role-specific content */}
+        {user.role === 'admin' && (
+          <div className="space-y-6">
+            <h2 className="text-3xl font-extrabold text-gray-400 mb-4">
+              Admin Dashboard
+            </h2>
+            
+            <div className="grid gap-4">
+              <button 
+                onClick={() => router.push('/form')}
+                className="w-full rounded-2xl px-6 py-4 bg-blue-400 text-white font-medium hover:opacity-90 text-left"
+              >
+                <div className="text-lg font-semibold">Add Parking Area</div>
+                <div className="text-blue-100 text-sm">Create new parking lots</div>
+              </button>
+              
+              <div className="bg-gray-100 rounded-2xl px-4 py-3">
+                <div className="text-sm font-medium text-gray-700 mb-1">
+                  Manage Parking Lots
+                </div>
+                <div className="text-gray-500 text-sm">
+                  View and edit existing parking areas (Coming soon)
+                </div>
+              </div>
+              
+              <div className="bg-gray-100 rounded-2xl px-4 py-3">
+                <div className="text-sm font-medium text-gray-700 mb-1">
+                  User Management
+                </div>
+                <div className="text-gray-500 text-sm">
+                  Manage drivers and admins (Coming soon)
+                </div>
+              </div>
             </div>
           </div>
-         </div>
-      </main>
-    </div>
+        )}
+
+        {user.role === 'driver' && (
+          <div className="space-y-6">
+            <h2 className="text-3xl font-extrabold text-gray-400 mb-4">
+              Driver Dashboard
+            </h2>
+            
+            <div className="grid gap-4">
+              <div className="bg-gray-100 rounded-2xl px-4 py-3">
+                <div className="text-sm font-medium text-gray-700 mb-1">
+                  Find Parking
+                </div>
+                <div className="text-gray-500 text-sm">
+                  Search for available parking spots (Coming soon)
+                </div>
+              </div>
+              
+              <div className="bg-gray-100 rounded-2xl px-4 py-3">
+                <div className="text-sm font-medium text-gray-700 mb-1">
+                  My Reservations
+                </div>
+                <div className="text-gray-500 text-sm">
+                  View your current and past bookings (Coming soon)
+                </div>
+              </div>
+              
+              <div className="bg-gray-100 rounded-2xl px-4 py-3">
+                <div className="text-sm font-medium text-gray-700 mb-1">
+                  Payment History
+                </div>
+                <div className="text-gray-500 text-sm">
+                  Track your parking expenses (Coming soon)
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </main>
   );
 }

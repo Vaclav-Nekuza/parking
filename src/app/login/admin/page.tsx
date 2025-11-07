@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from '../../contexts/session-context';
 
@@ -24,59 +24,55 @@ export default function AdminLoginPage() {
 
   if (isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="text-center">
-          <p className="text-gray-600 dark:text-gray-400">Redirecting to dashboard...</p>
+      <main className="min-h-screen bg-white">
+        <div className="max-w-xl mx-auto px-6 py-10">
+          <div className="text-center">
+            <p className="text-gray-500">Redirecting to dashboard...</p>
+          </div>
         </div>
-      </div>
+      </main>
     );
   }
 
   // If OAuth is authenticated, show loading state while setting up session
   if (isOAuthAuthenticated && nextAuthSession && isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="max-w-md w-full space-y-8 p-8">
-          <div className="text-center">
-            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">
-              ParkingApp
-            </h1>
+      <main className="min-h-screen bg-white">
+        <div className="max-w-xl mx-auto px-6 py-10">
+          <h1 className="text-5xl leading-tight font-extrabold tracking-tight text-black mb-1">
+            ParkingApp
+          </h1>
+          <div className="mt-8 text-center">
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-blue-100 flex items-center justify-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400"></div>
             </div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+            <h2 className="text-xl font-medium text-black mb-2">
               Setting up your account...
             </h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
+            <p className="text-gray-500">
               Please wait while we prepare your dashboard.
             </p>
           </div>
         </div>
-      </div>
+      </main>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-md w-full space-y-8 p-8">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">
-            ParkingApp
-          </h1>
-          <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-6">
-            Admin Login
-          </h2>
-        </div>
+    <main className="min-h-screen bg-white">
+      <div className="max-w-xl mx-auto px-6 py-10">
+        <h1 className="text-5xl leading-tight font-extrabold tracking-tight text-black mb-1">
+          Admin
+          <br />
+          Login
+        </h1>
+        <p className="text-gray-500 mb-8">
+          Sign in with Google to access the admin dashboard
+        </p>
         
         <div className="space-y-6">
-          <div className="text-center">
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
-              Sign in with Google to access the admin dashboard
-            </p>
-          </div>
-          
           <button
-            className="w-full flex items-center justify-center py-3 px-4 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center rounded-2xl px-8 py-3 bg-gray-100 text-black font-medium hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={handleLogin}
             disabled={isLoading}
           >
@@ -89,11 +85,11 @@ export default function AdminLoginPage() {
             {isLoading ? 'Signing in...' : 'Sign in as Admin with Google'}
           </button>
           
-          <div className="text-center">
-            <p className="text-gray-500 dark:text-gray-400 text-sm">
+          <div className="text-center pt-2">
+            <p className="text-gray-500 text-sm">
               Need driver access?{' '}
               <button
-                className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 underline"
+                className="text-blue-400 hover:text-blue-500 underline"
                 onClick={() => router.push('/login/driver')}
               >
                 Login as Driver
@@ -102,6 +98,6 @@ export default function AdminLoginPage() {
           </div>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
