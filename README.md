@@ -1,5 +1,9 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Available routes
+
+- [/parking-lots/1/reserve?name=Parking%20area%201&pricePerHour=40](Create new reservation)
+
 ## Getting Started
 
 First, run the development server:
