@@ -62,9 +62,7 @@ export default function AdminLoginPage() {
     <main className="min-h-screen bg-white">
       <div className="max-w-xl mx-auto px-6 py-10">
         <h1 className="text-5xl leading-tight font-extrabold tracking-tight text-black mb-1">
-          Admin
-          <br />
-          Login
+          ParkingApp
         </h1>
         <p className="text-gray-500 mb-8">
           Sign in with Google to access the admin dashboard
