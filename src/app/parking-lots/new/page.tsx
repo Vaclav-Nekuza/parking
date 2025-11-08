@@ -80,9 +80,9 @@ export default function CreateParkingLotPage() {
                     <form onSubmit={handleContinue} className="space-y-6">
                         {/* Address */}
                         <div>
-                            <label className="block text-base font-medium mb-2">Address</label>
+                            <label className="block text-base font-medium text-black mb-2">Address</label>
                             <input
-                                className="w-full bg-gray-100 rounded-2xl px-4 py-3 outline-none"
+                                className="w-full bg-gray-100 rounded-2xl px-4 py-3 text-black outline-none"
                                 placeholder=""
                                 value={values.address}
                                 onChange={onInputChange("address")}
@@ -94,12 +94,12 @@ export default function CreateParkingLotPage() {
 
                         {/* Number of parking spots */}
                         <div>
-                            <label className="block text-base font-medium mb-2">
+                            <label className="block text-base font-medium text-black mb-2">
                                 Number of parking spots
                             </label>
                             <input
                                 type="number"
-                                className="w-full bg-gray-100 rounded-2xl px-4 py-3 outline-none"
+                                className="w-full bg-gray-100 rounded-2xl px-4 py-3 text-black outline-none"
                                 placeholder="1"
                                 value={values.capacity}
                                 onChange={onInputChange("capacity")}
@@ -112,12 +112,12 @@ export default function CreateParkingLotPage() {
 
                         {/* Price per hour */}
                         <div>
-                            <label className="block text-base font-medium mb-2">
+                            <label className="block text-base font-medium text-black mb-2">
                                 Price per hour
                             </label>
                             <input
                                 type="number"
-                                className="w-full bg-gray-100 rounded-2xl px-4 py-3 outline-none"
+                                className="w-full bg-gray-100 rounded-2xl px-4 py-3 text-black outline-none"
                                 placeholder="kč"
                                 value={values.pricePerHour}
                                 onChange={onInputChange("pricePerHour")}
@@ -154,7 +154,7 @@ export default function CreateParkingLotPage() {
                                 <div className="text-sm font-medium text-gray-700 mb-1">
                                     Address
                                 </div>
-                                <div className="bg-white border rounded-2xl px-4 py-3 text-lg font-semibold">
+                                <div className="bg-white border rounded-2xl px-4 py-3 text-lg font-semibold text-black">
                                     {values.address || "—"}
                                 </div>
                             </div>
@@ -165,7 +165,7 @@ export default function CreateParkingLotPage() {
                                     <div className="text-sm font-medium text-gray-700 mb-1">
                                         No. of spots
                                     </div>
-                                    <div className="bg-white border rounded-2xl px-4 py-3 text-lg font-semibold">
+                                    <div className="bg-white border rounded-2xl px-4 py-3 text-lg font-semibold text-black">
                                         {values.capacity || "—"}
                                     </div>
                                 </div>
@@ -173,7 +173,7 @@ export default function CreateParkingLotPage() {
                                     <div className="text-sm font-medium text-gray-700 mb-1">
                                         Price per hour
                                     </div>
-                                    <div className="bg-white border rounded-2xl px-4 py-3 text-lg font-semibold">
+                                    <div className="bg-white border rounded-2xl px-4 py-3 text-lg font-semibold text-black">
                                         {values.pricePerHour ? `${values.pricePerHour} CZK` : "—"}
                                     </div>
                                 </div>
