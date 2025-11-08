@@ -1,8 +1,5 @@
 import { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -16,7 +13,7 @@ export const authOptions: NextAuthOptions = {
     error: "/",
   },
   callbacks: {
-    async signIn({ user, account }) {
+    async signIn() {
       // We'll handle user creation in our custom API route
       // This just allows the sign in to proceed
       return true;
