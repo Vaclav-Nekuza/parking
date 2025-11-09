@@ -45,7 +45,6 @@ export default function ParkingLotsPage() {
     return (
         <main className="min-h-screen bg-white">
             <div className="max-w-4xl mx-auto px-6 py-10">
-                {/* Hlavní nadpis + podnadpis */}
                 <h1 className="text-5xl leading-tight font-extrabold tracking-tight text-black mb-1">
                     Available parking houses
                 </h1>
@@ -53,21 +52,18 @@ export default function ParkingLotsPage() {
                     Find the perfect parking spot for your needs
                 </p>
 
-                {/* Loading state */}
                 {loading && (
                     <div className="flex justify-center items-center py-12">
                         <div className="text-gray-500 text-lg">Loading parking houses...</div>
                     </div>
                 )}
 
-                {/* Error state */}
                 {error && (
                     <div className="bg-red-50 border border-red-200 rounded-2xl px-6 py-4 mb-6">
                         <p className="text-red-600 font-medium">Error: {error}</p>
                     </div>
                 )}
 
-                {/* Empty state */}
                 {!loading && !error && parkingHouses.length === 0 && (
                     <div className="text-center py-12">
                         <div className="text-gray-400 text-xl mb-4">No parking houses available</div>
@@ -75,7 +71,6 @@ export default function ParkingLotsPage() {
                     </div>
                 )}
 
-                {/* Parking houses list */}
                 {!loading && !error && parkingHouses.length > 0 && (
                     <div className="space-y-6">
                         {parkingHouses.map((house) => (
@@ -84,7 +79,6 @@ export default function ParkingLotsPage() {
                                 className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-lg transition-shadow duration-200"
                             >
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
-                                    {/* Address - takes most space on desktop */}
                                     <div className="md:col-span-2">
                                         <div className="text-sm font-medium text-gray-700 mb-1">
                                             Address
@@ -97,7 +91,6 @@ export default function ParkingLotsPage() {
                                         </div>
                                     </div>
 
-                                    {/* Price section */}
                                     <div className="flex flex-col items-start md:items-end">
                                         <div className="text-sm font-medium text-gray-700 mb-1">
                                             Price per hour
@@ -111,7 +104,6 @@ export default function ParkingLotsPage() {
                                     </div>
                                 </div>
 
-                                {/* Admin ID - small info at bottom */}
                                 <div className="mt-4 pt-4 border-t border-gray-100">
                                     <div className="text-xs text-gray-400">
                                         Admin ID: {house.adminId}
@@ -122,7 +114,6 @@ export default function ParkingLotsPage() {
                     </div>
                 )}
 
-                {/* Add new parking house button */}
                 <div className="flex justify-end mt-8">
                     <a
                         href="/parking-lots/new"
