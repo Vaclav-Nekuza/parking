@@ -47,9 +47,7 @@ export default function ParkingLotsPage() {
             <div className="max-w-4xl mx-auto px-6 py-10">
                 {/* Hlavní nadpis + podnadpis */}
                 <h1 className="text-5xl leading-tight font-extrabold tracking-tight text-black mb-1">
-                    Available
-                    <br />
-                    parking houses
+                    Available parking houses
                 </h1>
                 <p className="text-gray-500 mb-8">
                     Find the perfect parking spot for your needs
