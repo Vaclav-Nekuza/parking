@@ -48,9 +48,16 @@ export async function POST(request: Request) {
                 { status: 400 }
             );
         }
+        const driverId_existing = await prisma.driver.findFirst({ where: { id: driverIdReq }});
+        if (!driverId_existing) {
+            return NextResponse.json(
+                { error: "Driver with this driver id does not exist" },
+                { status: 409 }
+            );
+        }
 
-        const existing = await prisma.vehicle.findFirst({ where: { SPZ: spzReq } });
-        if (existing) {
+        const spz_existing = await prisma.vehicle.findFirst({ where: { SPZ: spzReq } });
+        if (spz_existing) {
             return NextResponse.json(
                 { error: "Vehicle with this SPZ already exists" },
                 { status: 409 }
