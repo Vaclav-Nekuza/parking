@@ -3,7 +3,6 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from './contexts/session-context';
-import { Dashboard } from './components/dashboard';
 
 export default function HomePage() {
   const { isAuthenticated, user } = useSession();
