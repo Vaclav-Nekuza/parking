@@ -13,6 +13,7 @@ export interface SessionContextType {
   login: (role: UserRole) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
+  isHydrated: boolean;
   nextAuthSession?: unknown;
   isOAuthAuthenticated?: boolean;
   isLoading?: boolean;

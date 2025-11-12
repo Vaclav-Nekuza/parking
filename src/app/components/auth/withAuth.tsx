@@ -16,11 +16,12 @@ export function withAuth<P extends object>(
   const { requiredRole } = options;
 
   return function AuthenticatedComponent(props: P) {
-    const { isAuthenticated, user } = useSession();
+    const { isAuthenticated, user, isHydrated } = useSession();
     const router = useRouter();
 
     useEffect(() => {
-        console.log(isAuthenticated, user);
+      if (!isHydrated) return; // Wait for hydration
+      
       if (!isAuthenticated) {
         // Redirect to appropriate login based on required role
         const loginPath = requiredRole === 'admin' ? '/login/admin' : '/login/driver';
@@ -35,15 +36,15 @@ export function withAuth<P extends object>(
         router.push(redirectPath);
         return;
       }
-    }, [isAuthenticated, user, router]);
+    }, [isAuthenticated, user, router, isHydrated]);
 
-    // Show loading state while checking authentication
-    if (!isAuthenticated || (user && user.role !== requiredRole)) {
+    // Show loading state while checking authentication or during hydration
+    if (!isHydrated || !isAuthenticated || (user && user.role !== requiredRole)) {
       return (
         <main className="min-h-screen bg-white">
           <div className="max-w-xl mx-auto px-6 py-10">
             <div className="text-center">
-              <p className="text-gray-500">Redirecting...ZZZ</p>
+              <p className="text-gray-500">Redirecting...</p>
             </div>
           </div>
         </main>
