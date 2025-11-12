@@ -2,6 +2,7 @@
 
 import { useState, FormEvent, ChangeEvent } from "react";
 import { withAuth } from '../../components/auth/withAuth';
+import { useSession } from '../../contexts/session-context';
 
 type Values = {
     address: string;
@@ -16,6 +17,7 @@ type Errors = Partial<{
 }>;
 
 function CreateParkingLotPageComponent() {
+    const { logout } = useSession();
     const [step, setStep] = useState<1 | 2>(1);
 
     const [values, setValues] = useState<Values>({
@@ -67,15 +69,24 @@ function CreateParkingLotPageComponent() {
     return (
         <main className="min-h-screen bg-white">
             <div className="max-w-xl mx-auto px-6 py-10">
-                {/* Hlavní nadpis + podnadpis (stejný styl, jen pro desktop centrovaný blok) */}
-                <h1 className="text-5xl leading-tight font-extrabold tracking-tight text-black mb-1">
-                    Add
-                    <br />
-                    parking area
-                </h1>
-                <p className="text-gray-500 mb-8">
-                    Add new parking area that you own
-                </p>
+                <div className="flex justify-between items-start mb-8">
+                    <div>
+                        <h1 className="text-5xl leading-tight font-extrabold tracking-tight text-black mb-1">
+                            Add
+                            <br />
+                            parking area
+                        </h1>
+                        <p className="text-gray-500">
+                            Add new parking area that you own
+                        </p>
+                    </div>
+                    <button
+                        onClick={() => logout()}
+                        className="rounded-2xl px-6 py-2 bg-red-500 text-white font-medium hover:opacity-90 transition-opacity"
+                    >
+                        Logout
+                    </button>
+                </div>
 
                 {step === 1 && (
                     <form onSubmit={handleContinue} className="space-y-6">

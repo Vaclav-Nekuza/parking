@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { withAuth } from '../components/auth/withAuth';
+import { useSession } from '../contexts/session-context';
 
 type ParkingHouse = {
     id: string;
@@ -12,6 +13,7 @@ type ParkingHouse = {
 };
 
 function ParkingLotsPageComponent() {
+    const { logout } = useSession();
     const [parkingHouses, setParkingHouses] = useState<ParkingHouse[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -46,12 +48,22 @@ function ParkingLotsPageComponent() {
     return (
         <main className="min-h-screen bg-white">
             <div className="max-w-4xl mx-auto px-6 py-10">
-                <h1 className="text-5xl leading-tight font-extrabold tracking-tight text-black mb-1">
-                    Available parking houses
-                </h1>
-                <p className="text-gray-500 mb-8">
-                    Find the perfect parking spot for your needs
-                </p>
+                <div className="flex justify-between items-start mb-8">
+                    <div>
+                        <h1 className="text-5xl leading-tight font-extrabold tracking-tight text-black mb-1">
+                            Available parking houses
+                        </h1>
+                        <p className="text-gray-500">
+                            Find the perfect parking spot for your needs
+                        </p>
+                    </div>
+                    <button
+                        onClick={() => logout()}
+                        className="rounded-2xl px-6 py-2 bg-red-500 text-white font-medium hover:opacity-90 transition-opacity"
+                    >
+                        Logout
+                    </button>
+                </div>
 
                 {loading && (
                     <div className="flex justify-center items-center py-12">
