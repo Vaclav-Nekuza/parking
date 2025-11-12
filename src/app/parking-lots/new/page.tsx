@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, FormEvent, ChangeEvent } from "react";
+import { withAuth } from '../../components/auth/withAuth';
 
 type Values = {
     address: string;
@@ -14,7 +15,7 @@ type Errors = Partial<{
     pricePerHour: string;
 }>;
 
-export default function CreateParkingLotPage() {
+function CreateParkingLotPageComponent() {
     const [step, setStep] = useState<1 | 2>(1);
 
     const [values, setValues] = useState<Values>({
@@ -203,3 +204,5 @@ export default function CreateParkingLotPage() {
         </main>
     );
 }
+
+export default withAuth(CreateParkingLotPageComponent, { requiredRole: 'admin' });

@@ -12,7 +12,18 @@ interface SessionProviderProps {
 
 export function SessionProvider({ children }: SessionProviderProps) {
   const { data: nextAuthSession, status } = useNextAuthSession();
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(() => {
+    const savedSession = localStorage?.getItem('parking-session');
+    if (savedSession) {
+      try {
+        return JSON.parse(savedSession);
+      } catch (error) {
+        console.error('Error parsing saved session:', error);
+        localStorage.removeItem('parking-session');
+      }
+    }
+    return null;
+  });
   const [sessionToken, setSessionToken] = useState<string | null>(null);
   const [pendingRole, setPendingRole] = useState<UserRole | null>(null);
 

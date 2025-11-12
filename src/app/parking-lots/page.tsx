@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { withAuth } from '../components/auth/withAuth';
 
 type ParkingHouse = {
     id: string;
@@ -10,7 +11,7 @@ type ParkingHouse = {
     createdAt: string;
 };
 
-export default function ParkingLotsPage() {
+function ParkingLotsPageComponent() {
     const [parkingHouses, setParkingHouses] = useState<ParkingHouse[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -126,3 +127,5 @@ export default function ParkingLotsPage() {
         </main>
     );
 }
+
+export default withAuth(ParkingLotsPageComponent, { requiredRole: 'driver' });
