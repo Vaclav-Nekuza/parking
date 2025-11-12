@@ -10,7 +10,7 @@ export default function DriverLoginPage() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      router.push('/dashboard');
+      router.push('/parking-lots');
     }
   }, [isAuthenticated, router]);
 
@@ -27,7 +27,7 @@ export default function DriverLoginPage() {
       <main className="min-h-screen bg-white">
         <div className="max-w-xl mx-auto px-6 py-10">
           <div className="text-center">
-            <p className="text-gray-500">Redirecting to dashboard...</p>
+            <p className="text-gray-500">Redirecting...</p>
           </div>
         </div>
       </main>
@@ -49,9 +49,6 @@ export default function DriverLoginPage() {
             <h2 className="text-xl font-medium text-black mb-2">
               Setting up your account...
             </h2>
-            <p className="text-gray-500">
-              Please wait while we prepare your dashboard.
-            </p>
           </div>
         </div>
       </main>
@@ -65,7 +62,7 @@ export default function DriverLoginPage() {
           ParkingApp
         </h1>
         <p className="text-gray-500 mb-8">
-          Sign in with Google to access the driver dashboard
+          Sign in with Google to access the application
         </p>
         
         <div className="space-y-6">
