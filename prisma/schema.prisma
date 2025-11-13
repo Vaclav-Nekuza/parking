@@ -10,25 +10,38 @@ datasource db {
 }
 
 model Driver {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  email     String   @unique
-  password  String
-  name      String
-  phone     String
-  address   String
-  createdAt DateTime @default(now())
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  email         String    @unique
+  name          String
+  phone         String?   // Made optional for OAuth users
+  address       String?   // Made optional for OAuth users
+  
+  // OAuth fields
+  emailVerified DateTime?
+  image         String?
+  googleId      String?   @unique
+  
+  createdAt     DateTime  @default(now())
 
-  Vehicle     Vehicle[]
-  Reservation Reservation[]
+  Vehicle       Vehicle[]
+  Reservation   Reservation[]
+  Session       Session[]
 }
 
 model Admin {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  email     String   @unique
-  password  String
-  createdAt DateTime @default(now())
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  email         String    @unique
+  name          String
+  
+  // OAuth fields  
+  emailVerified DateTime?
+  image         String?
+  googleId      String?   @unique
+  
+  createdAt     DateTime  @default(now())
 
-  ParkingHouse ParkingHouse[]
+  ParkingHouse  ParkingHouse[]
+  Session       Session[]
 }
 
 model ParkingHouse {
@@ -70,4 +83,20 @@ model Reservation {
   start      DateTime
   end        DateTime
   createdAt  DateTime    @default(now())
+}
+
+// Simple session model that can relate to either Driver or Admin
+model Session {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  sessionToken String   @unique
+  userType     String   // 'driver' or 'admin'
+  driverId     String?  @db.ObjectId
+  adminId      String?  @db.ObjectId
+  isActive     Boolean  @default(true)
+  expires      DateTime
+  createdAt    DateTime @default(now())
+  
+  // Relations - only one will be populated based on userType
+  driver Driver? @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  admin  Admin?  @relation(fields: [adminId], references: [id], onDelete: Cascade)
 }

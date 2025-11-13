@@ -1,9 +1,7 @@
 // app/api/parkinglots/route.ts
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
-
+import { prisma } from "@/lib/prisma";
+ 
 /** GET -> list all parking houses */
 export async function GET() {
   try {
@@ -16,7 +14,7 @@ export async function GET() {
     await prisma.$disconnect().catch(() => {});
   }
 }
-
+ 
 /** POST -> create a parking house */
 export async function POST(req: Request) {
   try {
@@ -26,27 +24,27 @@ export async function POST(req: Request) {
     } catch {
       return NextResponse.json({ error: "Body is not valid JSON" }, { status: 400 });
     }
-
+ 
     const { adminId, address, price } = (body ?? {}) as Record<string, unknown>;
-
+ 
     const isValidObjectId = (v: unknown) => typeof v === "string" && /^[0-9a-fA-F]{24}$/.test(v);
     if (!isValidObjectId(adminId) || typeof address !== "string" || address.trim() === "") {
       return NextResponse.json({ error: "Missing or invalid adminId/address" }, { status: 400 });
     }
-
+ 
     const parsedPrice = typeof price === "number" ? price : Number(price);
     if (!Number.isFinite(parsedPrice) || !Number.isInteger(parsedPrice) || parsedPrice < 0) {
       return NextResponse.json({ error: "Missing or invalid price (non-negative integer)" }, { status: 400 });
     }
-
+ 
     try {
       const admin = await prisma.admin.findUnique({ where: { id: adminId as string } });
       if (!admin) return NextResponse.json({ error: "adminId does not exist" }, { status: 400 });
-
+ 
       const created = await prisma.parkingHouse.create({
         data: { adminId: admin.id, address: (address as string).trim(), price: parsedPrice },
       });
-
+ 
       return NextResponse.json(created, { status: 201 });
        } catch (e: unknown) {
       if ((e as { code?: string })?.code === "P2002") {
@@ -55,7 +53,7 @@ export async function POST(req: Request) {
           { status: 409 }
         );
       }
-
+ 
       console.error("POST /api/parkinglots db error:", e);
       return NextResponse.json({ error: "Failed to create parking lot" }, { status: 500 });
     } finally {
