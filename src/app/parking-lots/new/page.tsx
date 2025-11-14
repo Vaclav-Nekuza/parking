@@ -28,6 +28,11 @@ function CreateParkingLotPageComponent() {
 
     const [errors, setErrors] = useState<Errors>({});
 
+
+    const [saving, setSaving] = useState(false);
+    const [serverError, setServerError] = useState<string | null>(null);
+    const [serverSuccess, setServerSuccess] = useState<string | null>(null);
+
     function set<K extends keyof Values>(key: K, value: Values[K]) {
         setValues((prev) => ({ ...prev, [key]: value }));
     }
@@ -40,9 +45,9 @@ function CreateParkingLotPageComponent() {
 
     function validate(v: Values): Errors {
         const err: Errors = {};
-        if (!v.address) err.address = "Zadej adresu.";
-        if (!v.capacity) err.capacity = "Zadej počet míst.";
-        if (!v.pricePerHour) err.pricePerHour = "Zadej cenu za hodinu.";
+        if (!v.address.trim()) err.address = "Please enter an address.";
+        if (!v.capacity) err.capacity = "Please enter the capacity.";
+        if (!v.pricePerHour) err.pricePerHour = "Please enter the price per hour.";
         return err;
     }
 
@@ -55,15 +60,62 @@ function CreateParkingLotPageComponent() {
         }
     }
 
-    function handleSave() {
-        // finální payload (převod čísel ze stringu)
+
+    async function handleSave() {
+        setSaving(true);
+        setServerError(null);
+        setServerSuccess(null);
+
         const payload = {
             address: values.address,
             capacity: Number(values.capacity),
             pricePerHour: Number(values.pricePerHour),
         };
-        console.log("SAVE (mock):", payload);
-        alert("Uloženo (mock). Až bude backend, napojíme POST.");
+
+        try {
+            const res = await fetch("/api/parking-lots", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(payload),
+            });
+
+            let data: unknown = null;
+            try {
+                data = await res.json();
+            } catch {
+                data = null;
+            }
+
+            if (!res.ok) {
+                const errorMsg =
+                    data &&
+                        typeof data === "object" &&
+                        "error" in data &&
+                        typeof (data as any).error === "string"
+                        ? (data as any).error
+                        : `Failed to create the parking lot. (status ${res.status}).`;
+                setServerError(errorMsg);
+                return;
+            }
+
+            // OK – parkoviště vytvořeno
+            setServerSuccess("The parking lot was successfully created.");
+
+            // reset formuláře + návrat na krok 1
+            setValues({
+                address: "",
+                capacity: "",
+                pricePerHour: "",
+            });
+            setStep(1);
+        } catch (error) {
+            console.error("POST /api/parking-lots failed:", error);
+            setServerError("Error communicating with the server.");
+        } finally {
+            setSaving(false);
+        }
     }
 
     return (
@@ -71,13 +123,11 @@ function CreateParkingLotPageComponent() {
             <div className="max-w-xl mx-auto px-6 py-10">
                 <div className="flex justify-between items-start mb-8">
                     <div>
-                        <h1 className="text-5xl leading-tight font-extrabold tracking-tight text-black mb-1">
-                            Add
-                            <br />
-                            parking area
+                        <h1 className="text-3xl font-bold text-gray-900">
+                            Create a new parking lot
                         </h1>
-                        <p className="text-gray-500">
-                            Add new parking area that you own
+                        <p className="mt-2 text-gray-600">
+                            Fill in the details below to add a new parking lot to the system.
                         </p>
                     </div>
                     <button
@@ -89,108 +139,126 @@ function CreateParkingLotPageComponent() {
                 </div>
 
                 {step === 1 && (
-                    <form onSubmit={handleContinue} className="space-y-6">
-                        {/* Address */}
-                        <div>
-                            <label className="block text-base font-medium text-black mb-2">Address</label>
-                            <input
-                                className="w-full bg-gray-100 rounded-2xl px-4 py-3 text-black outline-none"
-                                placeholder=""
-                                value={values.address}
-                                onChange={onInputChange("address")}
-                            />
-                            {errors.address && (
-                                <p className="text-red-600 text-sm mt-1">{errors.address}</p>
-                            )}
-                        </div>
+                    <section className="mt-10 space-y-8">
+                        <form onSubmit={handleContinue} className="space-y-6">
+                            {/* Address */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">
+                                    Address
+                                </label>
+                                <input
+                                    type="text"
+                                    className="mt-2 block w-full rounded-2xl border border-gray-300 px-4 py-3 text-gray-900 shadow-sm focus:border-black focus:ring-black"
+                                    placeholder="E.g., Prague 1, Wenceslas Square 1"
+                                    value={values.address}
+                                    onChange={onInputChange("address")}
+                                />
+                                {errors.address && (
+                                    <p className="mt-1 text-sm text-red-600">
+                                        {errors.address}
+                                    </p>
+                                )}
+                            </div>
 
-                        {/* Number of parking spots */}
-                        <div>
-                            <label className="block text-base font-medium text-black mb-2">
-                                Number of parking spots
-                            </label>
-                            <input
-                                type="number"
-                                className="w-full bg-gray-100 rounded-2xl px-4 py-3 text-black outline-none"
-                                placeholder="1"
-                                value={values.capacity}
-                                onChange={onInputChange("capacity")}
-                                min={0}
-                            />
-                            {errors.capacity && (
-                                <p className="text-red-600 text-sm mt-1">{errors.capacity}</p>
-                            )}
-                        </div>
+                            {/* Capacity */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">
+                                    Capacity
+                                </label>
+                                <input
+                                    type="number"
+                                    className="mt-2 block w-full rounded-2xl border border-gray-300 px-4 py-3 text-gray-900 shadow-sm focus:border-black focus:ring-black"
+                                    placeholder="Maximum vehicle capacity"
+                                    value={values.capacity}
+                                    onChange={onInputChange("capacity")}
+                                />
+                                {errors.capacity && (
+                                    <p className="mt-1 text-sm text-red-600">
+                                        {errors.capacity}
+                                    </p>
+                                )}
+                            </div>
 
-                        {/* Price per hour */}
-                        <div>
-                            <label className="block text-base font-medium text-black mb-2">
-                                Price per hour
-                            </label>
-                            <input
-                                type="number"
-                                className="w-full bg-gray-100 rounded-2xl px-4 py-3 text-black outline-none"
-                                placeholder="kč"
-                                value={values.pricePerHour}
-                                onChange={onInputChange("pricePerHour")}
-                                min={0}
-                            />
-                            {errors.pricePerHour && (
-                                <p className="text-red-600 text-sm mt-1">
-                                    {errors.pricePerHour}
-                                </p>
-                            )}
-                        </div>
+                            {/* Price per hour */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">
+                                    Price per hour (CZK)
+                                </label>
+                                <input
+                                    type="number"
+                                    className="mt-2 block w-full rounded-2xl border border-gray-300 px-4 py-3 text-gray-900 shadow-sm focus:border-black focus:ring-black"
+                                    placeholder="E.g., 50"
+                                    value={values.pricePerHour}
+                                    onChange={onInputChange("pricePerHour")}
+                                />
+                                {errors.pricePerHour && (
+                                    <p className="mt-1 text-sm text-red-600">
+                                        {errors.pricePerHour}
+                                    </p>
+                                )}
+                            </div>
 
-                        {/* Continue button vpravo dole */}
-                        <div className="flex justify-end pt-2">
-                            <button
-                                type="submit"
-                                className="rounded-2xl px-8 py-3 bg-blue-400 text-white font-medium hover:opacity-90"
-                            >
-                                Continue
-                            </button>
-                        </div>
-                    </form>
+                            {/* tlačítko Continue */}
+                            <div className="pt-4">
+                                <button
+                                    type="submit"
+                                    className="inline-flex items-center rounded-2xl bg-black px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-gray-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
+                                >
+                                    Continue
+                                </button>
+                            </div>
+                        </form>
+                    </section>
                 )}
 
                 {step === 2 && (
-                    <section className="mt-4">
-                        <h2 className="text-3xl font-extrabold text-gray-400 mb-4">
-                            Is this information correct?
-                        </h2>
+                    <section className="mt-10 space-y-8">
+                        {/* Rekapitulace */}
+                        <div className="space-y-4 rounded-2xl border border-gray-200 bg-gray-50 px-6 py-5">
+                            <h2 className="text-lg font-semibold text-gray-900">
+                                Confirm Details
+                            </h2>
+                            <p className="text-sm text-gray-600">
+                                Please review the information before saving the parking lot.
+                            </p>
 
-                        <div className="space-y-5">
-                            {/* Address summary */}
-                            <div>
-                                <div className="text-sm font-medium text-gray-700 mb-1">
-                                    Address
-                                </div>
-                                <div className="bg-white border rounded-2xl px-4 py-3 text-lg font-semibold text-black">
-                                    {values.address || "—"}
-                                </div>
-                            </div>
-
-                            {/* Two-column summary: No. of spots / Price per hour */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <div className="text-sm font-medium text-gray-700 mb-1">
-                                        No. of spots
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm text-gray-500">Address:</span>
+                                    <div className="bg-white border rounded-2xl px-4 py-3 text-lg font-semibold text-black">
+                                        {values.address || "—"}
                                     </div>
+                                </div>
+
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm text-gray-500">Capacity:</span>
                                     <div className="bg-white border rounded-2xl px-4 py-3 text-lg font-semibold text-black">
                                         {values.capacity || "—"}
                                     </div>
                                 </div>
-                                <div>
-                                    <div className="text-sm font-medium text-gray-700 mb-1">
-                                        Price per hour
-                                    </div>
+
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm text-gray-500">
+                                        Price per hour:
+                                    </span>
                                     <div className="bg-white border rounded-2xl px-4 py-3 text-lg font-semibold text-black">
-                                        {values.pricePerHour ? `${values.pricePerHour} CZK` : "—"}
+                                        {values.pricePerHour
+                                            ? `${values.pricePerHour} CZK`
+                                            : "—"}
                                     </div>
                                 </div>
                             </div>
                         </div>
+
+                        {/* Zprávy z backendu */}
+                        {serverError && (
+                            <p className="mt-4 text-sm text-red-600">{serverError}</p>
+                        )}
+                        {serverSuccess && (
+                            <p className="mt-2 text-sm text-green-600">
+                                {serverSuccess}
+                            </p>
+                        )}
 
                         {/* Actions */}
                         <div className="flex items-center gap-4 mt-8">
@@ -203,10 +271,11 @@ function CreateParkingLotPageComponent() {
                             </button>
                             <button
                                 type="button"
-                                className="rounded-2xl px-6 py-3 border border-green-300 text-green-700 bg-green-50 hover:bg-green-100"
+                                className="rounded-2xl px-6 py-3... border-green-300 text-green-700 bg-green-50 hover:bg-green-100"
                                 onClick={handleSave}
+                                disabled={saving}
                             >
-                                Yes, Save
+                                {saving ? "Ukládám..." : "Yes, Save"}
                             </button>
                         </div>
                     </section>
