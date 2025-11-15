@@ -1,29 +1,26 @@
 "use client";
 
 import { useState, FormEvent, ChangeEvent } from "react";
-import { withAuth } from '../../components/auth/withAuth';
-import { useSession } from '../../contexts/session-context';
 
 type Values = {
-    address: string;
-    capacity: string;
-    pricePerHour: string;
+    spz: string;
+    type: string;
+    driverId: string;
 };
 
 type Errors = Partial<{
-    address: string;
-    capacity: string;
-    pricePerHour: string;
+    spz: string;
+    type: string;
+    driverId: string;
 }>;
 
-function CreateParkingLotPageComponent() {
-    const { logout } = useSession();
+export default function RegisterVehiclePage() {
     const [step, setStep] = useState<1 | 2>(1);
 
     const [values, setValues] = useState<Values>({
-        address: "",
-        capacity: "",
-        pricePerHour: "",
+        spz: "",
+        type: "",
+        driverId: "",
     });
 
     const [errors, setErrors] = useState<Errors>({});
@@ -38,15 +35,15 @@ function CreateParkingLotPageComponent() {
 
     function onInputChange(
         key: keyof Values
-    ): (e: ChangeEvent<HTMLInputElement>) => void {
+    ): (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void {
         return (e) => set(key, e.target.value as Values[typeof key]);
     }
 
     function validate(v: Values): Errors {
         const err: Errors = {};
-        if (!v.address.trim()) err.address = "Please enter an address.";
-        if (!v.capacity) err.capacity = "Please enter the capacity.";
-        if (!v.pricePerHour) err.pricePerHour = "Please enter the price per hour.";
+        if (!v.spz.trim()) err.spz = "Zadej SPZ vozidla.";
+        if (!v.type.trim()) err.type = "Vyber typ vozidla.";
+        if (!v.driverId.trim()) err.driverId = "Zadej driverId (ID řidiče).";
         return err;
     }
 
@@ -59,19 +56,22 @@ function CreateParkingLotPageComponent() {
         }
     }
 
+    // 🔴 Tohle je přesně přizpůsobené BACKENDU:
+    // POST /api/vehicle-registration
+    // body: { spzReq, driverIdReq, typeReq }
     async function handleSave() {
         setSaving(true);
         setServerError(null);
         setServerSuccess(null);
 
         const payload = {
-            address: values.address,
-            capacity: Number(values.capacity),
-            pricePerHour: Number(values.pricePerHour),
+            spzReq: values.spz,
+            driverIdReq: values.driverId,
+            typeReq: values.type,
         };
 
         try {
-            const res = await fetch("/api/parking-lots", {
+            const res = await fetch("/api/vehicle-registration", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -79,7 +79,17 @@ function CreateParkingLotPageComponent() {
                 body: JSON.stringify(payload),
             });
 
-            let data: unknown = null;
+            type VehicleResponse = {
+                id: string;
+                SPZ: string;
+                type: string;
+                driverId: string;
+                createdAt: string;
+            };
+
+            type ErrorResponse = { error: string };
+
+            let data: VehicleResponse | ErrorResponse | null = null;
             try {
                 data = await res.json();
             } catch {
@@ -87,30 +97,27 @@ function CreateParkingLotPageComponent() {
             }
 
             if (!res.ok) {
-                const errorMsg =
-                    data &&
-                    typeof data === "object" &&
-                    "error" in data &&
-                    typeof (data as { error: unknown }).error === "string"
-                        ? (data as { error: string }).error
-                        : `Failed to create the parking lot. (status ${res.status}).`;
-                setServerError(errorMsg);
+                const message =
+                    data && "error" in data && typeof (data as any).error === "string"
+                        ? (data as any).error
+                        : `Nepodařilo se zaregistrovat vozidlo (status ${res.status}).`;
+                setServerError(message);
                 return;
             }
 
-            // OK – parkoviště vytvořeno
-            setServerSuccess("The parking lot was successfully created.");
+            console.log("Vehicle registered:", data);
+            setServerSuccess("Vozidlo bylo úspěšně zaregistrováno.");
 
             // reset formuláře + návrat na krok 1
             setValues({
-                address: "",
-                capacity: "",
-                pricePerHour: "",
+                spz: "",
+                type: "",
+                driverId: "",
             });
             setStep(1);
         } catch (error) {
-            console.error("POST /api/parking-lots failed:", error);
-            setServerError("Error communicating with the server.");
+            console.error("POST /api/vehicle-registration failed:", error);
+            setServerError("Chyba při komunikaci se serverem.");
         } finally {
             setSaving(false);
         }
@@ -119,84 +126,73 @@ function CreateParkingLotPageComponent() {
     return (
         <main className="min-h-screen bg-white">
             <div className="max-w-xl mx-auto px-6 py-10">
-                <div className="flex justify-between items-start mb-8">
-                    <div>
-                        <h1 className="text-3xl font-bold text-gray-900">
-                            Create a new parking lot
-                        </h1>
-                        <p className="mt-2 text-gray-600">
-                            Fill in the details below to add a new parking lot to the system.
-                        </p>
-                    </div>
-                    <button
-                        onClick={() => logout()}
-                        className="rounded-2xl px-6 py-2 bg-red-500 text-white font-medium hover:opacity-90 transition-opacity"
-                    >
-                        Logout
-                    </button>
-                </div>
+                <h1 className="text-3xl font-bold text-gray-900">
+                    Register a new vehicle
+                </h1>
+                <p className="mt-2 text-gray-600">
+                    Fill in the details below to register a vehicle in the system.
+                </p>
 
                 {step === 1 && (
                     <section className="mt-10 space-y-8">
                         <form onSubmit={handleContinue} className="space-y-6">
-                            {/* Address */}
+                            {/* SPZ */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">
-                                    Address
+                                    SPZ
                                 </label>
                                 <input
                                     type="text"
                                     className="mt-2 block w-full rounded-2xl border border-gray-300 px-4 py-3 text-gray-900 shadow-sm focus:border-black focus:ring-black"
-                                    placeholder="E.g., Prague 1, Wenceslas Square 1"
-                                    value={values.address}
-                                    onChange={onInputChange("address")}
+                                    placeholder="Např. 1AB 2345"
+                                    value={values.spz}
+                                    onChange={onInputChange("spz")}
                                 />
-                                {errors.address && (
-                                    <p className="mt-1 text-sm text-red-600">
-                                        {errors.address}
-                                    </p>
+                                {errors.spz && (
+                                    <p className="mt-1 text-sm text-red-600">{errors.spz}</p>
                                 )}
                             </div>
 
-                            {/* Capacity */}
+                            {/* Typ vozidla – dropdown */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">
-                                    Capacity
+                                    Vehicle type
                                 </label>
-                                <input
-                                    type="number"
-                                    className="mt-2 block w-full rounded-2xl border border-gray-300 px-4 py-3 text-gray-900 shadow-sm focus:border-black focus:ring-black"
-                                    placeholder="Maximum vehicle capacity"
-                                    value={values.capacity}
-                                    onChange={onInputChange("capacity")}
-                                />
-                                {errors.capacity && (
-                                    <p className="mt-1 text-sm text-red-600">
-                                        {errors.capacity}
-                                    </p>
+                                <select
+                                    className="mt-2 block w-full rounded-2xl border border-gray-300 px-4 py-3 text-gray-900 shadow-sm focus:border-black focus:ring-black bg-white"
+                                    value={values.type}
+                                    onChange={onInputChange("type")}
+                                >
+                                    <option value="">Vyber typ vozidla</option>
+                                    <option value="car">Osobní auto</option>
+                                    <option value="van">Dodávka</option>
+                                    <option value="truck">Nákladní</option>
+                                    <option value="bus">Autobus</option>
+                                    <option value="motorcycle">Motocykl</option>
+                                </select>
+                                {errors.type && (
+                                    <p className="mt-1 text-sm text-red-600">{errors.type}</p>
                                 )}
                             </div>
 
-                            {/* Price per hour */}
+                            {/* Driver ID */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">
-                                    Price per hour (CZK)
+                                    Driver ID
                                 </label>
                                 <input
-                                    type="number"
+                                    type="text"
                                     className="mt-2 block w-full rounded-2xl border border-gray-300 px-4 py-3 text-gray-900 shadow-sm focus:border-black focus:ring-black"
-                                    placeholder="E.g., 50"
-                                    value={values.pricePerHour}
-                                    onChange={onInputChange("pricePerHour")}
+                                    placeholder="Zadej ID řidiče z databáze"
+                                    value={values.driverId}
+                                    onChange={onInputChange("driverId")}
                                 />
-                                {errors.pricePerHour && (
-                                    <p className="mt-1 text-sm text-red-600">
-                                        {errors.pricePerHour}
-                                    </p>
+                                {errors.driverId && (
+                                    <p className="mt-1 text-sm text-red-600">{errors.driverId}</p>
                                 )}
                             </div>
 
-                            {/* tlačítko Continue */}
+                            {/* Continue */}
                             <div className="pt-4">
                                 <button
                                     type="submit"
@@ -214,35 +210,31 @@ function CreateParkingLotPageComponent() {
                         {/* Rekapitulace */}
                         <div className="space-y-4 rounded-2xl border border-gray-200 bg-gray-50 px-6 py-5">
                             <h2 className="text-lg font-semibold text-gray-900">
-                                Confirm Details
+                                Confirm vehicle details
                             </h2>
                             <p className="text-sm text-gray-600">
-                                Please review the information before saving the parking lot.
+                                Please review the information before saving the vehicle.
                             </p>
 
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between">
-                                    <span className="text-sm text-gray-500">Address:</span>
+                                    <span className="text-sm text-gray-500">SPZ:</span>
                                     <div className="bg-white border rounded-2xl px-4 py-3 text-lg font-semibold text-black">
-                                        {values.address || "—"}
+                                        {values.spz || "—"}
                                     </div>
                                 </div>
 
                                 <div className="flex items-center justify-between">
-                                    <span className="text-sm text-gray-500">Capacity:</span>
+                                    <span className="text-sm text-gray-500">Vehicle type:</span>
                                     <div className="bg-white border rounded-2xl px-4 py-3 text-lg font-semibold text-black">
-                                        {values.capacity || "—"}
+                                        {values.type || "—"}
                                     </div>
                                 </div>
 
                                 <div className="flex items-center justify-between">
-                                    <span className="text-sm text-gray-500">
-                                        Price per hour:
-                                    </span>
+                                    <span className="text-sm text-gray-500">Driver ID:</span>
                                     <div className="bg-white border rounded-2xl px-4 py-3 text-lg font-semibold text-black">
-                                        {values.pricePerHour
-                                            ? `${values.pricePerHour} CZK`
-                                            : "—"}
+                                        {values.driverId || "—"}
                                     </div>
                                 </div>
                             </div>
@@ -269,11 +261,11 @@ function CreateParkingLotPageComponent() {
                             </button>
                             <button
                                 type="button"
-                                className="rounded-2xl px-6 py-3... border-green-300 text-green-700 bg-green-50 hover:bg-green-100"
+                                className="rounded-2xl px-6 py-3 border border-green-300 text-green-700 bg-green-50 hover:bg-green-100"
                                 onClick={handleSave}
                                 disabled={saving}
                             >
-                                {saving ? "Ukládám..." : "Yes, Save"}
+                                {saving ? "Saving..." : "Yes, Save"}
                             </button>
                         </div>
                     </section>
@@ -282,5 +274,3 @@ function CreateParkingLotPageComponent() {
         </main>
     );
 }
-
-export default withAuth(CreateParkingLotPageComponent, { requiredRole: 'admin' });
