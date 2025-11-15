@@ -15,9 +15,12 @@ export function SessionProvider({ children }: SessionProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [sessionToken, setSessionToken] = useState<string | null>(null);
   const [pendingRole, setPendingRole] = useState<UserRole | null>(null);
+  const [isHydrated, setIsHydrated] = useState(false);
 
-  // Load session from localStorage on component mount
+  // Handle hydration and load session from localStorage
   useEffect(() => {
+    setIsHydrated(true);
+    
     const savedSession = localStorage.getItem('parking-session');
     const savedToken = localStorage.getItem('parking-session-token');
     const savedPendingRole = localStorage.getItem('parking-pending-role');
@@ -150,6 +153,7 @@ export function SessionProvider({ children }: SessionProviderProps) {
     login,
     logout,
     isAuthenticated,
+    isHydrated,
     nextAuthSession,
     isOAuthAuthenticated: !!nextAuthSession,
     isLoading: !!pendingRole && !!nextAuthSession && !user,
