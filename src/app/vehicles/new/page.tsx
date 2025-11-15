@@ -96,8 +96,8 @@ export default function RegisterVehiclePage() {
 
             if (!res.ok) {
                 const message =
-                    data && "error" in data && typeof (data as any).error === "string"
-                        ? (data as any).error
+                    data && "error" in data && typeof (data as {error:unknown}).error === "string"
+                        ? (data as {error:string}).error
                         : `Nepodařilo se zaregistrovat vozidlo (status ${res.status}).`;
                 setServerError(message);
                 return;
