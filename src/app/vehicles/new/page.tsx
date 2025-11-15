@@ -56,9 +56,7 @@ export default function RegisterVehiclePage() {
         }
     }
 
-    // 🔴 Tohle je přesně přizpůsobené BACKENDU:
-    // POST /api/vehicle-registration
-    // body: { spzReq, driverIdReq, typeReq }
+
     async function handleSave() {
         setSaving(true);
         setServerError(null);
