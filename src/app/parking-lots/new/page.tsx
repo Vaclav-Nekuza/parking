@@ -91,10 +91,10 @@ function CreateParkingLotPageComponent() {
             if (!res.ok) {
                 const errorMsg =
                     data &&
-                        typeof data === "object" &&
-                        "error" in data &&
-                        typeof (data as any).error === "string"
-                        ? (data as any).error
+                    typeof data === "object" &&
+                    "error" in data &&
+                    typeof (data as { error: unknown }).error === "string"
+                        ? (data as { error: string }).error
                         : `Failed to create the parking lot. (status ${res.status}).`;
                 setServerError(errorMsg);
                 return;
