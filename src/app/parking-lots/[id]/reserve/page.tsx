@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useMemo } from 'react';
 import Link from 'next/link';
@@ -15,9 +15,7 @@ type Spot = {
   status: SpotStatus;
 };
 
-function pill(cls: string) {
-  return `rounded-full px-4 py-2 border font-semibold ${cls}`;
-}
+
 
 export default function ReserveAreaPage() {
   const params = useParams<{ id: string }>();
@@ -38,58 +36,89 @@ export default function ReserveAreaPage() {
   );
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-6">
-      <h1 className="text-4xl font-extrabold text-gray-600 mb-5">{areaName}</h1>
+    <main className="min-h-screen bg-white">
+      <div className="max-w-xl mx-auto px-6 py-10">
+        {/* Hlavní nadpis + podnadpis (stejný styl, jen pro desktop centrovaný blok) */}
+        <h1 className="text-5xl leading-tight font-extrabold tracking-tight text-black mb-1">
+          Reserve
+          <br />
+          parking spot
+        </h1>
+        <p className="text-gray-500 mb-8">
+          {areaName} • {pricePerHour} CZK/hour
+        </p>
 
-      <h2 className="text-xl font-semibold text-gray-900 mb-3">Parking spots:</h2>
+        <div className="space-y-4">
+          {spots.map((spot) => {
+            const isAvailableNow = spot.status.state === 'free-now';
+            
+            const statusText = 
+              spot.status.state === 'free-now' 
+                ? `Free until ${spot.status.freeUntil}`
+                : `Free from ${spot.status.freeFrom}`;
 
-      <div className="space-y-4">
-        {spots.map((s) => {
-          const leftBadge =
-            s.status.state === 'free-now'
-              ? { text: 'Park now', cls: 'text-green-600 border-green-300 bg-green-50' }
-              : { text: 'Park now', cls: 'text-green-400 border-green-200 bg-green-50/40 pointer-events-none opacity-60' };
-
-        const sub =
-            s.status.state === 'free-now'
-              ? `Free until ${s.status.freeUntil}`
-              : `Free from ${s.status.freeFrom}`;
-
-          return (
-            <div key={s.id} className="flex items-center justify-between gap-3 bg-gray-100/70 rounded-2xl px-4 py-3">
-              <div className="text-3xl font-semibold w-8">{s.label}</div>
-
-              <div className="flex items-center gap-3 flex-1">
-                <Link
-                  href={{
-                    pathname: `/parking-lots/${params.id}/reserve/${s.id}`,
-                    query: { mode: 'park', name: areaName, pricePerHour },
-                  }}
-                  className={pill(`${leftBadge.cls}`)}
-                >
-                  {leftBadge.text}
-                </Link>
-                <span className="text-sm text-gray-500">{sub}</span>
-              </div>
-
-              <Link
-                href={{
-                  pathname: `/parking-lots/${params.id}/reserve/${s.id}`,
-                  query: { mode: 'reserve', name: areaName, pricePerHour },
-                }}
-                className={pill('bg-blue-50 border-blue-200 text-blue-600')}
+            return (
+              <div 
+                key={spot.id} 
+                className="bg-gray-100 rounded-2xl p-6"
               >
-                Reserve for later
-              </Link>
-            </div>
-          );
-        })}
-      </div>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-xl font-bold">
+                      {spot.label}
+                    </div>
+                    <div>
+                      <div className="text-lg font-semibold">
+                        Spot {spot.label}
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        {statusText}
+                      </div>
+                    </div>
+                  </div>
+                  {isAvailableNow && (
+                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  )}
+                </div>
 
-      <div className="mt-10">
-        <Link href="/parking-lots" className={pill('bg-blue-50 border-blue-200 text-blue-600')}>
-          Back
-        </Link>
+                <div className="flex gap-3">
+                  <Link
+                    href={{
+                      pathname: `/parking-lots/${params.id}/reserve/${spot.id}`,
+                      query: { mode: 'park', name: areaName, pricePerHour },
+                    }}
+                    className={`rounded-2xl px-6 py-3 font-medium ${
+                      isAvailableNow
+                        ? 'bg-green-500 text-white hover:opacity-90'
+                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    }`}
+                  >
+                    Park now
+                  </Link>
+                  <Link
+                    href={{
+                      pathname: `/parking-lots/${params.id}/reserve/${spot.id}`,
+                      query: { mode: 'reserve', name: areaName, pricePerHour },
+                    }}
+                    className="rounded-2xl px-6 py-3 bg-blue-400 text-white font-medium hover:opacity-90"
+                  >
+                    Reserve for later
+                  </Link>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Back button */}
+        <div className="flex justify-start pt-8">
+          <Link 
+            href="/parking-lots" 
+            className="rounded-2xl px-8 py-3 border border-gray-300 text-gray-700 font-medium hover:opacity-90"
+          >
+            Back to areas
+          </Link>
+        </div>
       </div>
     </main>
   );
