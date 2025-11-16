@@ -18,7 +18,7 @@ export default function HomePage() {
     if (user?.role === 'driver') {
       router.push('/parking-lots');
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, router, user?.role ]);
 
   return (
     <main className="min-h-screen bg-white">

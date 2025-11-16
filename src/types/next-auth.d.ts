@@ -1,3 +1,4 @@
+// @disable-next-line no-unused-vars
 import type NextAuth from "next-auth";
 
 declare module "next-auth" {

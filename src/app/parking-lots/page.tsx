@@ -126,15 +126,6 @@ function ParkingLotsPageComponent() {
                         ))}
                     </div>
                 )}
-
-                <div className="flex justify-end mt-8">
-                    <a
-                        href="/parking-lots/new"
-                        className="rounded-2xl px-8 py-3 bg-green-500 text-white font-medium hover:opacity-90 transition-opacity"
-                    >
-                        Add New Parking House
-                    </a>
-                </div>
             </div>
         </main>
     );
