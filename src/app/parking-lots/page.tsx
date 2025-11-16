@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import { withAuth } from '../components/auth/withAuth';
 import { useSession } from '../contexts/session-context';
 
