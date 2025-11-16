@@ -1,16 +1,10 @@
-'use client';
+"use client";
 
 import { useMemo, useState, useEffect } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
-function pill(cls: string) {
-  return `rounded-full px-5 py-2 border font-semibold ${cls}`;
-}
 
-function card(cls = '') {
-  return `bg-gray-100/70 rounded-2xl p-5 ${cls}`;
-}
 
 function czk(v: number) {
   return new Intl.NumberFormat('cs-CZ', { style: 'currency', currency: 'CZK', maximumFractionDigits: 0 }).format(v);
@@ -64,219 +58,248 @@ export default function SpotDetailPage() {
   }, [mode]);
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-6">
-      <h1 className="text-4xl font-extrabold text-gray-600 mb-5">
-        {areaName} - <span className="text-gray-700">Spot {spotLabel}</span>
-      </h1>
+    <main className="min-h-screen bg-white">
+      <div className="max-w-xl mx-auto px-6 py-10">
+        {/* Hlavní nadpis + podnadpis (stejný styl, jen pro desktop centrovaný blok) */}
+        <h1 className="text-5xl leading-tight font-extrabold tracking-tight text-black mb-1">
+          {mode === 'park' && 'Park'}
+          {mode === 'reserve' && 'Reserve'}
+          {mode === 'active' && 'Parking'}
+          <br />
+          spot {spotLabel}
+        </h1>
+        <p className="text-gray-500 mb-8">
+          {areaName} • {pricePerHour} CZK/hour
+        </p>
 
-      {/* PARK NOW */}
-      {mode === 'park' && (
-        <>
-          <section className={card()}>
-            <p className="text-2xl font-semibold text-gray-800 mb-2">Park now for:</p>
+        {/* PARK NOW */}
+        {mode === 'park' && (
+          <>
+            <section className="bg-gray-100 rounded-2xl p-6 mb-6">
+              <h2 className="text-2xl font-semibold text-black mb-4">Park now for:</h2>
 
-            <div className="flex items-baseline gap-5 mb-1">
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  min={5}
-                  step={5}
-                  value={minutes}
-                  onChange={(e) => setMinutes(clamp(parseInt(e.target.value || '0', 10), 5, 12 * 60))}
-                  className="text-blue-600 text-5xl font-bold w-28 bg-transparent outline-none"
-                />
-                <span className="text-blue-600 text-3xl font-bold">min</span>
+              <div className="flex items-baseline gap-5 mb-4">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min={5}
+                    step={5}
+                    value={minutes}
+                    onChange={(e) => setMinutes(clamp(parseInt(e.target.value || '0', 10), 5, 12 * 60))}
+                    className="text-blue-600 text-5xl font-bold w-28 bg-transparent outline-none"
+                  />
+                  <span className="text-blue-600 text-3xl font-bold">min</span>
+                </div>
+                <div className="text-4xl text-gray-500 font-semibold">{czk(priceNow)}</div>
               </div>
-              <div className="text-4xl text-gray-500 font-semibold">{czk(priceNow)}</div>
-            </div>
 
-            <div className="text-green-600 font-medium mb-3">Free until {freeUntil}</div>
+              <div className="text-green-600 font-medium mb-4">Free until {freeUntil}</div>
 
-            <button
-              className={pill('border-green-300 text-green-700 bg-green-50')}
-              onClick={() => setMinutes((m) => clamp(m + 15, 5, 12 * 60))}
-            >
-              Park now
-            </button>
-          </section>
-
-          <section className="mt-8">
-            <h3 className="text-2xl font-bold mb-3">Choose payment method</h3>
-
-            <div className={card('flex flex-col gap-3')}>
-              <select
-                value={selectedCard}
-                onChange={(e) => setSelectedCard(e.target.value)}
-                className="rounded-xl px-4 py-2 bg-white text-gray-900"
+              <button
+                className="rounded-2xl px-6 py-3 bg-green-500 text-white font-medium hover:opacity-90"
+                onClick={() => setMinutes((m) => clamp(m + 15, 5, 12 * 60))}
               >
-                <option>Pre-saved card 1</option>
-                <option>Pre-saved card 2</option>
-                <option>Apple Pay (demo)</option>
-              </select>
+                Add 15 min
+              </button>
+            </section>
 
-              <button className={pill('bg-blue-50 border-blue-200 text-blue-600 self-start')}>+ Add new card</button>
+            <section className="bg-gray-100 rounded-2xl p-6">
+              <h3 className="text-xl font-semibold text-black mb-4">Choose payment method</h3>
+
+              <div className="space-y-4">
+                <select
+                  value={selectedCard}
+                  onChange={(e) => setSelectedCard(e.target.value)}
+                  className="w-full bg-white rounded-2xl px-4 py-3 text-black outline-none"
+                >
+                  <option>Pre-saved card 1</option>
+                  <option>Pre-saved card 2</option>
+                  <option>Apple Pay (demo)</option>
+                </select>
+
+                <button className="rounded-2xl px-6 py-3 border border-blue-300 text-blue-600 bg-blue-50 hover:bg-blue-100 font-medium">
+                  + Add new card
+                </button>
+              </div>
+            </section>
+
+            <div className="flex items-center justify-between pt-8">
+              <Link 
+                href={`/parking-lots/${params.id}/reserve`} 
+                className="rounded-2xl px-8 py-3 border border-gray-300 text-gray-700 font-medium hover:opacity-90"
+              >
+                Back
+              </Link>
+              <button
+                className="rounded-2xl px-8 py-3 bg-blue-400 text-white font-medium hover:opacity-90"
+                onClick={() => router.push(`/parking-lots/${params.id}/reserve/${params.spotId}?mode=active&name=${encodeURIComponent(areaName)}`)}
+              >
+                Pay & Park
+              </button>
             </div>
-          </section>
+          </>
+        )}
 
-          <footer className="mt-10 flex items-center justify-between">
-            <Link href={`/parking-lots/${params.id}/reserve`} className={pill('bg-blue-50 border-blue-200 text-blue-600')}>
-              Back
-            </Link>
-            <button
-              className={pill('bg-green-50 border-green-300 text-green-700')}
-              onClick={() => router.push(`/parking-lots/${params.id}/reserve/${params.spotId}?mode=active&name=${encodeURIComponent(areaName)}`)}
-            >
-              Pay &amp; Park
-            </button>
-          </footer>
-        </>
-      )}
+        {/* RESERVE FOR LATER */}
+        {mode === 'reserve' && (
+          <>
+            <section className="bg-gray-100 rounded-2xl p-6 mb-6">
+              <h2 className="text-2xl font-semibold text-black mb-6">Reserve for later:</h2>
 
-      {/* RESERVE FOR LATER */}
-      {mode === 'reserve' && (
-        <>
-          <section className={card()}>
-            <p className="text-2xl font-semibold text-gray-800 mb-4">Reserve for later:</p>
-
-            <div className="flex flex-col gap-5">
-              {/* Calendar */}
-              <div className="bg-white rounded-2xl p-4 shadow-sm">
-                <div className="flex items-center justify-between mb-2">
-                  <button
-                    className="px-2 py-1 rounded-lg border text-gray-600"
-                    onClick={() =>
-                      setMonthCursor(new Date(monthCursor.getFullYear(), monthCursor.getMonth() - 1, 1))
-                    }
-                  >
-                    ◀
-                  </button>
-                  <div className="font-semibold">
-                    {monthCursor.toLocaleString('en-US', { month: 'long', year: 'numeric' })}
+              <div className="space-y-6">
+                {/* Calendar */}
+                <div className="bg-white rounded-2xl p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <button
+                      className="w-10 h-10 rounded-xl border border-gray-300 flex items-center justify-center text-gray-600 hover:bg-gray-50"
+                      onClick={() =>
+                        setMonthCursor(new Date(monthCursor.getFullYear(), monthCursor.getMonth() - 1, 1))
+                      }
+                    >
+                      ◀
+                    </button>
+                    <div className="font-semibold text-lg">
+                      {monthCursor.toLocaleString('en-US', { month: 'long', year: 'numeric' })}
+                    </div>
+                    <button
+                      className="w-10 h-10 rounded-xl border border-gray-300 flex items-center justify-center text-gray-600 hover:bg-gray-50"
+                      onClick={() =>
+                        setMonthCursor(new Date(monthCursor.getFullYear(), monthCursor.getMonth() + 1, 1))
+                      }
+                    >
+                      ▶
+                    </button>
                   </div>
-                  <button
-                    className="px-2 py-1 rounded-lg border text-gray-600"
-                    onClick={() =>
-                      setMonthCursor(new Date(monthCursor.getFullYear(), monthCursor.getMonth() + 1, 1))
-                    }
-                  >
-                    ▶
-                  </button>
+
+                  <div className="grid grid-cols-7 gap-1 text-center text-xs text-gray-500 mb-2">
+                    {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map((d) => (
+                      <div key={d} className="py-2">{d}</div>
+                    ))}
+                  </div>
+
+                  <div className="grid grid-cols-7 gap-1">
+                    {daysInMonth.map((d, i) => {
+                      const isPicked =
+                        d &&
+                        pickedDate &&
+                        d.getFullYear() === pickedDate.getFullYear() &&
+                        d.getMonth() === pickedDate.getMonth() &&
+                        d.getDate() === pickedDate.getDate();
+
+                      return (
+                        <button
+                          key={i}
+                          disabled={!d}
+                          onClick={() => d && setPickedDate(d)}
+                          className={[
+                            'h-11 rounded-xl text-sm font-medium',
+                            d ? 'bg-gray-50 hover:bg-blue-50' : 'bg-transparent cursor-default',
+                            isPicked ? 'bg-blue-400 text-white' : '',
+                          ].join(' ')}
+                        >
+                          {d ? d.getDate() : ''}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-7 gap-1 text-center text-xs text-gray-500 mb-2">
-                  {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map((d) => (
-                    <div key={d}>{d}</div>
-                  ))}
-                </div>
-
-                <div className="grid grid-cols-7 gap-1">
-                  {daysInMonth.map((d, i) => {
-                    const isPicked =
-                      d &&
-                      pickedDate &&
-                      d.getFullYear() === pickedDate.getFullYear() &&
-                      d.getMonth() === pickedDate.getMonth() &&
-                      d.getDate() === pickedDate.getDate();
-
-                    return (
-                      <button
-                        key={i}
-                        disabled={!d}
-                        onClick={() => d && setPickedDate(d)}
-                        className={[
-                          'h-11 rounded-xl text-sm',
-                          d ? 'bg-gray-50 hover:bg-blue-50' : 'bg-transparent cursor-default',
-                          isPicked ? 'ring-2 ring-blue-400 font-semibold' : '',
-                        ].join(' ')}
-                      >
-                        {d ? d.getDate() : ''}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Times */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white rounded-2xl p-4 shadow-sm text-center">
-                  <label className="block text-sm text-gray-500 mb-1">From</label>
-                  <input
-                    type="time"
-                    value={fromTime}
-                    onChange={(e) => setFromTime(e.target.value)}
-                    className="text-3xl font-bold text-blue-600 bg-transparent outline-none w-full text-center"
-                  />
-                </div>
-                <div className="bg-white rounded-2xl p-4 shadow-sm text-center">
-                  <label className="block text-sm text-gray-500 mb-1">To</label>
-                  <input
-                    type="time"
-                    value={toTime}
-                    onChange={(e) => setToTime(e.target.value)}
-                    className="text-3xl font-bold text-blue-600 bg-transparent outline-none w-full text-center"
-                  />
+                {/* Times */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-white rounded-2xl p-4 text-center">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">From</label>
+                    <input
+                      type="time"
+                      value={fromTime}
+                      onChange={(e) => setFromTime(e.target.value)}
+                      className="text-2xl font-bold text-blue-600 bg-transparent outline-none w-full text-center"
+                    />
+                  </div>
+                  <div className="bg-white rounded-2xl p-4 text-center">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">To</label>
+                    <input
+                      type="time"
+                      value={toTime}
+                      onChange={(e) => setToTime(e.target.value)}
+                      className="text-2xl font-bold text-blue-600 bg-transparent outline-none w-full text-center"
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
-          </section>
+            </section>
 
-          <section className="mt-8">
-            <h3 className="text-2xl font-bold mb-3">Choose payment method</h3>
-            <div className={card('flex flex-col gap-3')}>
-              <select
-                value={selectedCard}
-                onChange={(e) => setSelectedCard(e.target.value)}
-                className="rounded-xl px-4 py-2 bg-white text-gray-900"
+            <section className="bg-gray-100 rounded-2xl p-6">
+              <h3 className="text-xl font-semibold text-black mb-4">Choose payment method</h3>
+              <div className="space-y-4">
+                <select
+                  value={selectedCard}
+                  onChange={(e) => setSelectedCard(e.target.value)}
+                  className="w-full bg-white rounded-2xl px-4 py-3 text-black outline-none"
+                >
+                  <option>Pre-saved card 1</option>
+                  <option>Pre-saved card 2</option>
+                </select>
+                <button className="rounded-2xl px-6 py-3 border border-blue-300 text-blue-600 bg-blue-50 hover:bg-blue-100 font-medium">
+                  + Add new card
+                </button>
+              </div>
+            </section>
+
+            <div className="flex items-center justify-between pt-8">
+              <Link 
+                href={`/parking-lots/${params.id}/reserve`} 
+                className="rounded-2xl px-8 py-3 border border-gray-300 text-gray-700 font-medium hover:opacity-90"
               >
-                <option>Pre-saved card 1</option>
-                <option>Pre-saved card 2</option>
-              </select>
-              <button className={pill('bg-blue-50 border-blue-200 text-blue-600 self-start')}>+ Add new card</button>
-            </div>
-          </section>
-
-          <footer className="mt-10 flex items-center justify-between">
-            <Link href={`/parking-lots/${params.id}/reserve`} className={pill('bg-blue-50 border-blue-200 text-blue-600')}>
-              Back
-            </Link>
-            <button
-              className={pill('bg-green-50 border-green-300 text-green-700')}
-              onClick={() => alert(`Reserved ${areaName} - Spot ${spotLabel} on ${pickedDate?.toDateString()} ${fromTime}-${toTime}`)}
-            >
-              Reserve
-            </button>
-          </footer>
-        </>
-      )}
-
-      {/* PARKING IN PROGRESS */}
-      {mode === 'active' && (
-        <>
-          <section className={card()}>
-            <p className="text-2xl font-semibold text-gray-800 mb-3">Parking in progress:</p>
-
-            <div className="text-5xl text-blue-600 font-bold mb-1">
-              {Math.floor(leftSec / 60)} min {String(leftSec % 60).padStart(2, '0')} left
-            </div>
-            <div className="text-green-600 font-medium mb-4">Free until {freeUntil}</div>
-
-            <div className="flex gap-4">
-              <button className={pill('border-red-300 text-red-700 bg-red-50')} onClick={() => router.back()}>
-                Cancel
-              </button>
-              <button className={pill('border-green-300 text-green-700 bg-green-50')} onClick={() => setLeftSec((s) => s + 15 * 60)}>
-                Prolong
+                Back
+              </Link>
+              <button
+                className="rounded-2xl px-8 py-3 bg-blue-400 text-white font-medium hover:opacity-90"
+                onClick={() => alert(`Reserved ${areaName} - Spot ${spotLabel} on ${pickedDate?.toDateString()} ${fromTime}-${toTime}`)}
+              >
+                Reserve
               </button>
             </div>
-          </section>
+          </>
+        )}
 
-          <footer className="mt-10">
-            <Link href={`/parking-lots/${params.id}/reserve`} className={pill('bg-blue-50 border-blue-200 text-blue-600')}>
-              Back
-            </Link>
-          </footer>
-        </>
-      )}
+        {/* PARKING IN PROGRESS */}
+        {mode === 'active' && (
+          <>
+            <section className="bg-gray-100 rounded-2xl p-6">
+              <h2 className="text-2xl font-semibold text-black mb-4">Parking in progress:</h2>
+
+              <div className="text-5xl text-blue-600 font-bold mb-2">
+                {Math.floor(leftSec / 60)} min {String(leftSec % 60).padStart(2, '0')} left
+              </div>
+              <div className="text-green-600 font-medium mb-6">Free until {freeUntil}</div>
+
+              <div className="flex gap-4">
+                <button 
+                  className="rounded-2xl px-6 py-3 border border-red-300 text-red-600 bg-red-50 hover:bg-red-100 font-medium" 
+                  onClick={() => router.back()}
+                >
+                  Cancel
+                </button>
+                <button 
+                  className="rounded-2xl px-6 py-3 bg-green-500 text-white font-medium hover:opacity-90" 
+                  onClick={() => setLeftSec((s) => s + 15 * 60)}
+                >
+                  Prolong
+                </button>
+              </div>
+            </section>
+
+            <div className="flex justify-start pt-8">
+              <Link 
+                href={`/parking-lots/${params.id}/reserve`} 
+                className="rounded-2xl px-8 py-3 border border-gray-300 text-gray-700 font-medium hover:opacity-90"
+              >
+                Back
+              </Link>
+            </div>
+          </>
+        )}
+      </div>
     </main>
   );
 }
