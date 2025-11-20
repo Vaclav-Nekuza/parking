@@ -269,11 +269,11 @@ function CreateParkingLotPageComponent() {
                             </button>
                             <button
                                 type="button"
-                                className="rounded-2xl px-6 py-3... border-green-300 text-green-700 bg-green-50 hover:bg-green-100"
+                                className="rounded-2xl px-6 py-3 border border-green-300 text-green-700 bg-green-50 hover:bg-green-100"
                                 onClick={handleSave}
                                 disabled={saving}
                             >
-                                {saving ? "Ukládám..." : "Yes, Save"}
+                                {saving ? "Saving..." : "Yes, Save"}
                             </button>
                         </div>
                     </section>

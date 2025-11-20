@@ -1,26 +1,25 @@
 "use client";
 
-import { useState, FormEvent, ChangeEvent } from "react";
+import { useState, FormEvent, ChangeEvent, useEffect } from "react";
+import { useSession } from "@/app/contexts/session-context";
 
 type Values = {
     spz: string;
     type: string;
-    driverId: string;
 };
 
 type Errors = Partial<{
     spz: string;
     type: string;
-    driverId: string;
 }>;
 
 export default function RegisterVehiclePage() {
+    const { user, isAuthenticated, isHydrated } = useSession();
     const [step, setStep] = useState<1 | 2>(1);
 
     const [values, setValues] = useState<Values>({
         spz: "",
         type: "",
-        driverId: "",
     });
 
     const [errors, setErrors] = useState<Errors>({});
@@ -28,6 +27,15 @@ export default function RegisterVehiclePage() {
     const [saving, setSaving] = useState(false);
     const [serverError, setServerError] = useState<string | null>(null);
     const [serverSuccess, setServerSuccess] = useState<string | null>(null);
+
+    // Check authentication on component mount
+    useEffect(() => {
+        if (isHydrated && !isAuthenticated) {
+            setServerError("Please log in as a driver to register a vehicle.");
+        } else if (isHydrated && isAuthenticated && user?.role !== 'driver') {
+            setServerError("Only drivers can register vehicles. Please log in as a driver.");
+        }
+    }, [isHydrated, isAuthenticated, user]);
 
     function set<K extends keyof Values>(key: K, value: Values[K]) {
         setValues((prev) => ({ ...prev, [key]: value }));
@@ -43,7 +51,6 @@ export default function RegisterVehiclePage() {
         const err: Errors = {};
         if (!v.spz.trim()) err.spz = "Zadej SPZ vozidla.";
         if (!v.type.trim()) err.type = "Vyber typ vozidla.";
-        if (!v.driverId.trim()) err.driverId = "Zadej driverId (ID řidiče).";
         return err;
     }
 
@@ -56,23 +63,35 @@ export default function RegisterVehiclePage() {
         }
     }
 
-
     async function handleSave() {
+        // Validate authentication before proceeding
+        if (!isAuthenticated || user?.role !== 'driver') {
+            setServerError("Authentication required. Please log in as a driver.");
+            return;
+        }
+
         setSaving(true);
         setServerError(null);
         setServerSuccess(null);
 
         const payload = {
             spzReq: values.spz,
-            driverIdReq: values.driverId,
             typeReq: values.type,
         };
+
+        // Get session token from localStorage
+        const sessionToken = localStorage.getItem('parking-session-token');
+        if (!sessionToken) {
+            setServerError("Please log in to register a vehicle.");
+            return;
+        }
 
         try {
             const res = await fetch("/api/vehicle-registration", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
+                    "x-session-token": sessionToken,
                 },
                 body: JSON.stringify(payload),
             });
@@ -110,7 +129,6 @@ export default function RegisterVehiclePage() {
             setValues({
                 spz: "",
                 type: "",
-                driverId: "",
             });
             setStep(1);
         } catch (error) {
@@ -131,7 +149,30 @@ export default function RegisterVehiclePage() {
                     Fill in the details below to register a vehicle in the system.
                 </p>
 
-                {step === 1 && (
+                {/* Show loading state while checking authentication */}
+                {!isHydrated && (
+                    <div className="mt-10 text-center">
+                        <p className="text-gray-600">Loading...</p>
+                    </div>
+                )}
+
+                {/* Show authentication error if not logged in or wrong role */}
+                {isHydrated && (!isAuthenticated || user?.role !== 'driver') && (
+                    <div className="mt-10 text-center">
+                        <div className="rounded-2xl border border-red-200 bg-red-50 px-6 py-5">
+                            <p className="text-red-600">
+                                {!isAuthenticated 
+                                    ? "Please log in as a driver to register a vehicle."
+                                    : "Only drivers can register vehicles. Please log in as a driver."}
+                            </p>
+                        </div>
+                    </div>
+                )}
+
+                {/* Show form only for authenticated drivers */}
+                {isHydrated && isAuthenticated && user?.role === 'driver' && (
+                    <>
+                        {step === 1 && (
                     <section className="mt-10 space-y-8">
                         <form onSubmit={handleContinue} className="space-y-6">
                             {/* SPZ */}
@@ -173,23 +214,6 @@ export default function RegisterVehiclePage() {
                                 )}
                             </div>
 
-                            {/* Driver ID */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">
-                                    Driver ID
-                                </label>
-                                <input
-                                    type="text"
-                                    className="mt-2 block w-full rounded-2xl border border-gray-300 px-4 py-3 text-gray-900 shadow-sm focus:border-black focus:ring-black"
-                                    placeholder="Zadej ID řidiče z databáze"
-                                    value={values.driverId}
-                                    onChange={onInputChange("driverId")}
-                                />
-                                {errors.driverId && (
-                                    <p className="mt-1 text-sm text-red-600">{errors.driverId}</p>
-                                )}
-                            </div>
-
                             {/* Continue */}
                             <div className="pt-4">
                                 <button
@@ -228,13 +252,6 @@ export default function RegisterVehiclePage() {
                                         {values.type || "—"}
                                     </div>
                                 </div>
-
-                                <div className="flex items-center justify-between">
-                                    <span className="text-sm text-gray-500">Driver ID:</span>
-                                    <div className="bg-white border rounded-2xl px-4 py-3 text-lg font-semibold text-black">
-                                        {values.driverId || "—"}
-                                    </div>
-                                </div>
                             </div>
                         </div>
 
@@ -267,6 +284,8 @@ export default function RegisterVehiclePage() {
                             </button>
                         </div>
                     </section>
+                )}
+                    </>
                 )}
             </div>
         </main>
