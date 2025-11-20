@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+const isValidObjectId = (id: string) => /^[a-fA-F0-9]{24}$/.test(id);
 // GET /api/vehicle-registration
 // GET /api/vehicle-registration?id=...
 // GET /api/vehicle-registration?spz=...
@@ -8,13 +9,17 @@ export async function GET(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
         const idReq = searchParams.get("id");
-        const spzReq = searchParams.get("SPZ");
+        const spzReq = searchParams.get("spz");
 
-        if (idReq) {
-            const vehicle = await prisma.vehicle.findUnique({ where: { id:idReq } });
-            if (!vehicle) return NextResponse.json({ error: "Vehicle not found" }, { status: 404 });
-            return NextResponse.json(vehicle, { status: 200 });
-        }
+            if (idReq) {
+                if (!isValidObjectId(idReq)) {
+                    return NextResponse.json({error: "Invalid ID"}, {status: 400});
+                }
+                const vehicle = await prisma.vehicle.findUnique({ where: { id:idReq } });
+                if (!vehicle) return NextResponse.json({ error: "Vehicle not found" }, { status: 404 });
+                return NextResponse.json(vehicle, { status: 200 });
+            }
+
 
         if (spzReq) {
             const vehicle = await prisma.vehicle.findFirst({ where: { SPZ:spzReq } });
@@ -22,7 +27,6 @@ export async function GET(request: Request) {
             return NextResponse.json(vehicle, { status: 200 });
         }
 
-        // Return all vehicles if no filter provided
         const vehicles = await prisma.vehicle.findMany();
         return NextResponse.json(vehicles, { status: 200 });
     } catch (error) {
