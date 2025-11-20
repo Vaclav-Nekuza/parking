@@ -1,6 +1,27 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+// Helper function to get authenticated driver from session
+async function getAuthenticatedDriver(request: Request) {
+    const sessionToken = request.headers.get('authorization')?.replace('Bearer ', '') || 
+                        request.headers.get('x-session-token');
+                        
+    if (!sessionToken) {
+        return null;
+    }
+    
+    const session = await prisma.session.findUnique({
+        where: { sessionToken },
+        include: { driver: true }
+    });
+    
+    if (!session || !session.isActive || session.expires < new Date() || session.userType !== 'driver') {
+        return null;
+    }
+    
+    return session.driver;
+}
+
 // GET /api/vehicle-registration
 // GET /api/vehicle-registration?id=...
 // GET /api/vehicle-registration?spz=...
@@ -34,25 +55,27 @@ export async function GET(request: Request) {
 // POST /api/vehicle-registration
 // {
 // "spz": spz
-// "driverId": driverId
 // "type": type
 // }
 export async function POST(request: Request) {
     try {
-        const data = await request.json();
-        const { spzReq, driverIdReq, typeReq } = data;
-
-        if (!spzReq || !driverIdReq || !typeReq) {
+        // Get authenticated driver from session
+        const driver = await getAuthenticatedDriver(request);
+        
+        if (!driver) {
             return NextResponse.json(
-                { error: "Missing required fields: spz, brand, model" },
-                { status: 400 }
+                { error: "Authentication required. Please log in as a driver." },
+                { status: 401 }
             );
         }
-        const driverId_existing = await prisma.driver.findFirst({ where: { id: driverIdReq }});
-        if (!driverId_existing) {
+
+        const data = await request.json();
+        const { spzReq, typeReq } = data;
+
+        if (!spzReq || !typeReq) {
             return NextResponse.json(
-                { error: "Driver with this driver id does not exist" },
-                { status: 409 }
+                { error: "Missing required fields: spz, type" },
+                { status: 400 }
             );
         }
 
@@ -65,7 +88,11 @@ export async function POST(request: Request) {
         }
 
         const vehicle = await prisma.vehicle.create({
-            data: { SPZ:spzReq, driverId:driverIdReq, type:typeReq },
+            data: { 
+                SPZ: spzReq, 
+                driverId: driver.id, 
+                type: typeReq 
+            },
         });
 
         return NextResponse.json(vehicle, { status: 201 });
