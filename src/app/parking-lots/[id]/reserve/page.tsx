@@ -68,7 +68,7 @@ export default function ReserveAreaPage() {
                       {spot.label}
                     </div>
                     <div>
-                      <div className="text-lg font-semibold">
+                      <div className="text-lg text-gray-600 font-semibold">
                         Spot {spot.label}
                       </div>
                       <div className="text-sm text-gray-600">
