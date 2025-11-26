@@ -19,7 +19,16 @@ export async function GET(req: Request) {
             }
             const reservation = await prisma.reservation.findUnique( {where: {id: idReq} } );
             if (!reservation) return NextResponse.json({ error: "Reservation not found" }, { status: 404 });
-            return NextResponse.json(reservation, { status: 200 });
+
+            const parkSlot = await prisma.parkingSlot.findUnique( {where: {id: reservation.parkSlotId} } );
+            if (!parkSlot) return NextResponse.json({ error: "Consistency error - parking slot not found" }, { status: 404 });
+
+            const parkingHouse = await prisma.parkingHouse.findUnique( {where: {id: parkSlot.parkHouseId} } );
+            if (!parkingHouse) return NextResponse.json({ error: "Consistency error - parking house not found" }, { status: 404 });
+
+            if (reservation.driverId === session.user.id || session.user.id === parkingHouse.adminId) {
+                return NextResponse.json(reservation, { status: 200 });
+            } else return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
     } catch (error) {
