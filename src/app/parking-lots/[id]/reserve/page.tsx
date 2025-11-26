@@ -1,18 +1,28 @@
 "use client";
 
-import { useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 
 type SpotStatus =
-  | { state: 'free-now'; freeUntil: string }     // např. "14:00"
-  | { state: 'busy';     freeFrom: string }      // např. "15:45"
-  | { state: 'free-from'; freeFrom: string };    // pro pozdější uvolnění (pondělí atp.)
+  | { state: 'free-now'; freeUntil: string | null }
+  | { state: 'busy';     freeFrom: string };
 
 type Spot = {
   id: string;
-  label: string;               // „1“, „2“, …
+  label: string;
   status: SpotStatus;
+};
+
+type ParkingHouse = {
+  id: string;
+  address: string;
+  pricePerHour: number;
+};
+
+type ApiResponse = {
+  parkingHouse: ParkingHouse;
+  slots: Spot[];
 };
 
 
@@ -21,19 +31,50 @@ export default function ReserveAreaPage() {
   const params = useParams<{ id: string }>();
   const search = useSearchParams();
 
-  const areaName = search.get('name') ?? `Parking area ${params.id}`;
-  const pricePerHour = Number(search.get('pricePerHour') ?? 40); // CZK/h
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [spots, setSpots] = useState<Spot[]>([]);
+  const [parkingHouse, setParkingHouse] = useState<ParkingHouse | null>(null);
 
-  // demo data – v produkci nahraď voláním na API podle params.id
-  const spots: Spot[] = useMemo(
-    () => [
-      { id: '1', label: '1', status: { state: 'free-now', freeUntil: '14:00' } },
-      { id: '2', label: '2', status: { state: 'busy', freeFrom: '15:45' } },
-      { id: '3', label: '3', status: { state: 'busy', freeFrom: '20:45' } },
-      { id: '4', label: '4', status: { state: 'free-from', freeFrom: '8:00 Mon' } },
-    ],
-    []
-  );
+  const areaName = parkingHouse?.address ?? search.get('name') ?? `Parking area ${params.id}`;
+  const pricePerHour = parkingHouse?.pricePerHour ?? Number(search.get('pricePerHour') ?? 40);
+
+  useEffect(() => {
+    const fetchSlots = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`/api/parking-lots/${params.id}/slots`);
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch parking slots');
+        }
+
+        const data: ApiResponse = await response.json();
+        setParkingHouse(data.parkingHouse);
+        setSpots(data.slots);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSlots();
+  }, [params.id]);
+
+  // Helper function to format the status text
+  const formatStatusText = (status: SpotStatus): string => {
+    if (status.state === 'free-now') {
+      if (status.freeUntil) {
+        const date = new Date(status.freeUntil);
+        return `Free until ${date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
+      }
+      return 'Available';
+    } else {
+      const date = new Date(status.freeFrom);
+      return `Free from ${date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
+    }
+  };
 
   return (
     <main className="min-h-screen bg-white">
@@ -48,14 +89,20 @@ export default function ReserveAreaPage() {
           {areaName} • {pricePerHour} CZK/hour
         </p>
 
+        {loading && (
+          <div className="text-center py-8 text-gray-500">Loading parking spots...</div>
+        )}
+
+        {error && (
+          <div className="bg-red-100 text-red-700 p-4 rounded-2xl mb-4">
+            Error: {error}
+          </div>
+        )}
+
         <div className="space-y-4">
           {spots.map((spot) => {
             const isAvailableNow = spot.status.state === 'free-now';
-            
-            const statusText = 
-              spot.status.state === 'free-now' 
-                ? `Free until ${spot.status.freeUntil}`
-                : `Free from ${spot.status.freeFrom}`;
+            const statusText = formatStatusText(spot.status);
 
             return (
               <div 
@@ -85,7 +132,7 @@ export default function ReserveAreaPage() {
                   <Link
                     href={{
                       pathname: `/parking-lots/${params.id}/reserve/${spot.id}`,
-                      query: { mode: 'park', name: areaName, pricePerHour },
+                      query: { mode: 'park', name: areaName, pricePerHour, spotLabel: spot.label },
                     }}
                     className={`rounded-2xl px-6 py-3 font-medium ${
                       isAvailableNow
@@ -98,7 +145,7 @@ export default function ReserveAreaPage() {
                   <Link
                     href={{
                       pathname: `/parking-lots/${params.id}/reserve/${spot.id}`,
-                      query: { mode: 'reserve', name: areaName, pricePerHour },
+                      query: { mode: 'reserve', name: areaName, pricePerHour, spotLabel: spot.label },
                     }}
                     className="rounded-2xl px-6 py-3 bg-blue-400 text-white font-medium hover:opacity-90"
                   >
