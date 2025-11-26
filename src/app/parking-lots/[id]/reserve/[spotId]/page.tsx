@@ -21,6 +21,7 @@ export default function SpotDetailPage() {
   const spotLabel = q.get('spotLabel') ?? params.spotId;
   const mode = (q.get('mode') ?? 'park') as 'park' | 'reserve' | 'active';
   const pricePerHour = Number(q.get('pricePerHour') ?? 40);
+  const reservationId = q.get('reservationId'); // For active mode
 
   // PARK NOW state
   const [minutes, setMinutes] = useState(15);
@@ -80,8 +81,11 @@ export default function SpotDetailPage() {
         throw new Error(error.error || 'Failed to create reservation');
       }
 
+      const data = await response.json();
+      const newReservationId = data.reservation.id;
+
       // Redirect to active parking page
-      router.push(`/parking-lots/${params.id}/reserve/${params.spotId}?mode=active&name=${encodeURIComponent(areaName)}&pricePerHour=${pricePerHour}&spotLabel=${encodeURIComponent(spotLabel)}`);
+      router.push(`/parking-lots/${params.id}/reserve/${params.spotId}?mode=active&name=${encodeURIComponent(areaName)}&pricePerHour=${pricePerHour}&spotLabel=${encodeURIComponent(spotLabel)}&reservationId=${newReservationId}`);
     } catch (err) {
       setApiError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -142,6 +146,40 @@ export default function SpotDetailPage() {
       setIsSubmitting(false);
     }
   };
+
+  // Handler for canceling reservation
+  const handleCancelReservation = async () => {
+    if (!reservationId) {
+      setApiError('No reservation ID found');
+      return;
+    }
+
+    if (!confirm('Are you sure you want to cancel this reservation?')) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    setApiError(null);
+
+    try {
+      const response = await fetch(`/api/reservation/${reservationId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to cancel reservation');
+      }
+
+      // Redirect back to parking lot list
+      router.push(`/parking-lots/${params.id}/reserve`);
+    } catch (err) {
+      setApiError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   useEffect(() => {
     if (mode !== 'active') return;
     const t = setInterval(() => setLeftSec((s) => Math.max(0, s - 1)), 1000);
@@ -375,10 +413,11 @@ export default function SpotDetailPage() {
 
               <div className="flex gap-4">
                 <button 
-                  className="rounded-2xl px-6 py-3 border border-red-300 text-red-600 bg-red-50 hover:bg-red-100 font-medium" 
-                  onClick={() => router.back()}
+                  className="rounded-2xl px-6 py-3 border border-red-300 text-red-600 bg-red-50 hover:bg-red-100 font-medium disabled:opacity-50 disabled:cursor-not-allowed" 
+                  onClick={handleCancelReservation}
+                  disabled={isSubmitting}
                 >
-                  Cancel
+                  {isSubmitting ? 'Cancelling...' : 'Cancel'}
                 </button>
                 <button 
                   className="rounded-2xl px-6 py-3 bg-green-500 text-white font-medium hover:opacity-90" 
