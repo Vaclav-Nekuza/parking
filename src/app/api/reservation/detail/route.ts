@@ -17,8 +17,12 @@ export async function GET(req: Request) {
             if (!isValidObjectId(idReq)) {
                 return NextResponse.json({error: "Invalid ID"}, {status: 400});
             }
+
             const reservation = await prisma.reservation.findUnique( {where: {id: idReq} } );
             if (!reservation) return NextResponse.json({ error: "Reservation not found" }, { status: 404 });
+
+            const driver = await prisma.driver.findUnique( {where: {id: reservation.driverId} } );
+            if (!driver) return NextResponse.json({ error: "Driver not found" }, { status: 404 });
 
             const parkSlot = await prisma.parkingSlot.findUnique( {where: {id: reservation.parkSlotId} } );
             if (!parkSlot) return NextResponse.json({ error: "Consistency error - parking slot not found" }, { status: 404 });
@@ -26,9 +30,12 @@ export async function GET(req: Request) {
             const parkingHouse = await prisma.parkingHouse.findUnique( {where: {id: parkSlot.parkHouseId} } );
             if (!parkingHouse) return NextResponse.json({ error: "Consistency error - parking house not found" }, { status: 404 });
 
-            if (reservation.driverId === session.user.id || session.user.id === parkingHouse.adminId) {
+            const admin = await prisma.admin.findUnique({where: {googleId: session.user.id}})
+            if (admin && admin.id === parkingHouse.adminId) {
                 return NextResponse.json(reservation, { status: 200 });
-            } else return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            } else if (reservation.driverId === driver.id ) {
+                return NextResponse.json(reservation, { status: 200 });
+            }
         }
 
     } catch (error) {
