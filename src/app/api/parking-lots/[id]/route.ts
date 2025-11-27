@@ -1,12 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 // GET /api/parking-lots/:id
-export async function GET(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
-  const { id } = params;
+export async function GET(req: Request, context: any) {
+  const { id } = context.params as { id: string };
 
   try {
     const house = await prisma.parkingHouse.findUnique({
@@ -46,11 +45,8 @@ export async function GET(
 }
 
 // PUT /api/parking-lots/:id
-export async function PUT(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
-  const { id } = params;
+export async function PUT(req: Request, context: any) {
+  const { id } = context.params as { id: string };
 
   try {
     const body = await req.json();
@@ -129,11 +125,8 @@ export async function PUT(
 }
 
 // DELETE /api/parking-lots/:id
-export async function DELETE(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
-  const { id } = params;
+export async function DELETE(req: Request, context: any) {
+  const { id } = context.params as { id: string };
 
   try {
     // delete slots first
