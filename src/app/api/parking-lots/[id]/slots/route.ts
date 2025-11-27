@@ -37,11 +37,12 @@ export async function GET(req: Request, { params }: RouteParams) {
     // For each slot, check if there's an active reservation
     const slotsWithStatus = await Promise.all(
       slots.map(async (slot, index) => {
-        // Find the current or next reservation for this slot
+        // Find the current or next reservation for this slot (excluding cancelled reservations)
         const currentReservation = await prisma.reservation.findFirst({
           where: {
             parkSlotId: slot.id,
             end: { gt: now }, // Reservation hasn't ended yet
+            cancelledAt: null, // Only consider non-cancelled reservations
           },
           orderBy: { start: "asc" },
           select: { start: true, end: true },
