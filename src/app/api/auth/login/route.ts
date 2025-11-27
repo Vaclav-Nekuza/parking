@@ -37,6 +37,7 @@ export async function POST(request: NextRequest) {
           name: session.user.name || 'Unknown Driver',
           image: session.user.image,
           emailVerified: new Date(),
+          googleId: session.user.id,
         },
         create: {
           email: session.user.email,
@@ -54,6 +55,7 @@ export async function POST(request: NextRequest) {
           name: session.user.name || 'Unknown Admin',
           image: session.user.image,
           emailVerified: new Date(),
+          googleId: session.user.id,
         },
         create: {
           email: session.user.email,
