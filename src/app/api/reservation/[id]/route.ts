@@ -52,9 +52,10 @@ export async function DELETE(req: Request, { params }: RouteParams) {
       return NextResponse.json({ error: "You can only cancel your own reservations" }, { status: 403 });
     }
 
-    //Delete the reservation
-    await prisma.reservation.delete({
+    //Mark the reservation as cancelled
+    await prisma.reservation.update({
       where: { id },
+      data: { cancelledAt: new Date() },
     });
 
     //Successful response

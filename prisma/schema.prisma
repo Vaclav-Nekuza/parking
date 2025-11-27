@@ -75,14 +75,15 @@ model Vehicle {
 }
 
 model Reservation {
-  id         String      @id @default(auto()) @map("_id") @db.ObjectId
-  driver     Driver      @relation(fields: [driverId], references: [id])
-  driverId   String      @db.ObjectId
-  parkSlot   ParkingSlot @relation(fields: [parkSlotId], references: [id])
-  parkSlotId String      @db.ObjectId
-  start      DateTime
-  end        DateTime
-  createdAt  DateTime    @default(now())
+  id          String      @id @default(auto()) @map("_id") @db.ObjectId
+  driver      Driver      @relation(fields: [driverId], references: [id])
+  driverId    String      @db.ObjectId
+  parkSlot    ParkingSlot @relation(fields: [parkSlotId], references: [id])
+  parkSlotId  String      @db.ObjectId
+  start       DateTime
+  end         DateTime
+  cancelledAt DateTime?
+  createdAt   DateTime    @default(now())
 }
 
 // Simple session model that can relate to either Driver or Admin
