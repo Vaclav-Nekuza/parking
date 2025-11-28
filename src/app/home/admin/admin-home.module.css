@@ -1,0 +1,89 @@
+.main {
+  min-height: 100vh;
+  background-color: #ffffff;
+}
+
+.container {
+  max-width: 48rem; /* similar to max-w-xl */
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem; /* py-10 px-6 */
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+}
+
+.title {
+  font-size: 1.875rem; /* text-3xl */
+  font-weight: 700;
+  color: #111827; /* gray-900 */
+}
+
+.subtitle {
+  margin-top: 0.5rem;
+  color: #4b5563; /* gray-600 */
+  font-size: 0.95rem;
+}
+
+.logoutButton {
+  border-radius: 9999px;
+  padding: 0.5rem 1.5rem;
+  background-color: #ef4444; /* red-500 */
+  color: #ffffff;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: opacity 150ms ease-in-out;
+}
+
+.logoutButton:hover {
+  opacity: 0.9;
+}
+
+.section {
+  margin-top: 2.5rem;
+}
+
+.card {
+  border-radius: 1rem;
+  border: 1px solid #e5e7eb; /* gray-200 */
+  padding: 1.75rem 1.5rem;
+  background-color: #f9fafb; /* gray-50 */
+}
+
+.cardTitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 0.5rem;
+}
+
+.cardText {
+  font-size: 0.95rem;
+  color: #4b5563;
+}
+
+.addButton {
+  margin-bottom: 0.75rem;
+  padding: 0.6rem 1.5rem;
+  border-radius: 9999px;
+  border: none;
+  background: #000;
+  color: #fff;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.addButton:hover {
+  opacity: 0.9;
+}
+
+.sectionTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: black;
+}

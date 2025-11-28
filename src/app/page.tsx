@@ -5,20 +5,34 @@ import { useRouter } from 'next/navigation';
 import { useSession } from './contexts/session-context';
 
 export default function HomePage() {
-  const { isAuthenticated, user } = useSession();
+  const { isAuthenticated, user, isHydrated } = useSession();
   const router = useRouter();
 
   useEffect(() => {
+    // Wait until session is hydrated, otherwise we might redirect too early
+    if (!isHydrated) return;
+
+    // Not logged in → go to driver login (or a general login page)
     if (!isAuthenticated) {
-      router.push('/login/driver');
+      router.replace('/login/driver');
+      return;
     }
+
+    // Logged in as admin → admin home
     if (user?.role === 'admin') {
-      router.push('/parking-lots/new');
+      router.replace('/home/admin');
+      return;
     }
+
+    // Logged in as driver → driver home / list of parking lots
     if (user?.role === 'driver') {
-      router.push('/parking-lots');
+      router.replace('/parking-lots');
+      return;
     }
-  }, [isAuthenticated, router, user?.role ]);
+
+    // Fallback: if logged in but role is somehow missing
+    router.replace('/login/driver');
+  }, [isHydrated, isAuthenticated, user?.role, router]);
 
   return (
     <main className="min-h-screen bg-white">
