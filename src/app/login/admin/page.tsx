@@ -10,7 +10,7 @@ export default function AdminLoginPage() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      router.push('/parking-lots/new');
+      router.push('/home/admin');
     }
   }, [isAuthenticated, router]);
 

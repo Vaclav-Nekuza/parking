@@ -65,3 +65,25 @@
   font-size: 0.95rem;
   color: #4b5563;
 }
+
+.addButton {
+  margin-bottom: 0.75rem;
+  padding: 0.6rem 1.5rem;
+  border-radius: 9999px;
+  border: none;
+  background: #000;
+  color: #fff;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.addButton:hover {
+  opacity: 0.9;
+}
+
+.sectionTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: black;
+}

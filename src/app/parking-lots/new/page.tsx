@@ -100,14 +100,10 @@ function CreateParkingLotPageComponent() {
         return;
       }
 
+      // Success -> optional message, then redirect to admin home
       setServerSuccess("The parking lot was successfully created.");
-
-      setValues({
-        address: "",
-        capacity: "",
-        pricePerHour: "",
-      });
-      setStep(1);
+      router.push("/home/admin");
+      return;
     } catch (error) {
       console.error("POST /api/parking-lots failed:", error);
       setServerError("Error communicating with the server.");
@@ -256,7 +252,9 @@ function CreateParkingLotPageComponent() {
               <p className="mt-4 text-sm text-red-600">{serverError}</p>
             )}
             {serverSuccess && (
-              <p className="mt-2 text-sm text-green-600">{serverSuccess}</p>
+              <p className="mt-2 text-sm text-green-600">
+                {serverSuccess}
+              </p>
             )}
 
             <div className="flex items-center gap-4 mt-8">

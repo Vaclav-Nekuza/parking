@@ -20,14 +20,16 @@ function AdminHomePageComponent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // src/app/home/admin/page.tsx (snippet)
+
   useEffect(() => {
     async function fetchParkingHouses() {
       try {
         setLoading(true);
         setError(null);
 
-        // ⬅️ use the original route that returns adminId, price, createdAt
-        const response = await fetch("/api/parkinglots");
+        // ⬇️ use the scoped version for admin
+        const response = await fetch("/api/parkinglots?scope=mine");
         if (!response.ok) {
           throw new Error("Failed to fetch parking houses");
         }
@@ -48,12 +50,12 @@ function AdminHomePageComponent() {
     fetchParkingHouses();
   }, []);
 
-  const displayName =
-    user?.name?.trim()?.split(" ")[0] || "Admin";
+  const displayName = user?.name?.trim()?.split(" ")[0] || "Admin";
 
   return (
     <main className={styles.main}>
       <div className={styles.container}>
+        {/* Header */}
         <div className={styles.header}>
           <div>
             <h1 className={styles.title}>Welcome, {displayName}</h1>
@@ -69,7 +71,22 @@ function AdminHomePageComponent() {
           </button>
         </div>
 
+        {/* Content */}
         <section className={styles.section}>
+          {/* Add button + heading */}
+          <div>
+            <button
+              type="button"
+              onClick={() => router.push("/parking-lots/new")}
+              className={styles.addButton}
+            >
+              Add parking lot
+            </button>
+
+            <h2 className={styles.sectionTitle}>My parking lots</h2>
+          </div>
+
+          {/* List of parking houses */}
           <ParkingHouseList
             parkingHouses={parkingHouses}
             loading={loading}

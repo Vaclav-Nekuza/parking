@@ -170,16 +170,52 @@ function EditParkingLotPageComponent() {
         method: "DELETE",
       });
 
-      if (!res.ok) {
-        throw new Error(
-          `Failed to delete the parking lot. (status ${res.status}).`
-        );
+      let data: unknown = null;
+      try {
+        data = await res.json();
+      } catch {
+        data = null;
       }
 
+      if (!res.ok) {
+        // Try to read backend error text if present
+        let backendError: string | null = null;
+        if (
+          data &&
+          typeof data === "object" &&
+          "error" in data &&
+          typeof (data as { error: unknown }).error === "string"
+        ) {
+          backendError = (data as { error: string }).error;
+        }
+
+        // If forbidden / ownership issue, show special popup
+        if (res.status === 403) {
+          window.alert("You can delete only parking lots owned by you.");
+        } else if (backendError) {
+          window.alert(backendError);
+        } else {
+          window.alert(
+            `Failed to delete the parking lot. (status ${res.status}).`
+          );
+        }
+
+        // Also store error so it's visible in the UI
+        setServerError(
+          backendError ??
+            (res.status === 403
+              ? "You can delete only parking lots owned by you."
+              : `Failed to delete the parking lot. (status ${res.status}).`)
+        );
+        return;
+      }
+
+      // Success
       router.push("/home/admin");
     } catch (error) {
       console.error("DELETE /api/parking-lots/[id] failed:", error);
       setServerError("Failed to delete the parking lot.");
+      window.alert("Failed to delete the parking lot.");
     } finally {
       setSaving(false);
     }
