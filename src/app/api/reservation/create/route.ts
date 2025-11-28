@@ -66,8 +66,9 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Park slot not found" }, { status: 404 });
         }
 
-        //Checks for overlapping reservations
-        if (await prisma.reservation.findFirst({where: {parkSlotId, 
+        //Checks for overlapping reservations (excluding cancelled ones)
+        if (await prisma.reservation.findFirst({where: {parkSlotId,
+            cancelledAt: null,
             AND: [
                 {start :{lt: endDate}},
                 {end: {gt: startDate}}
@@ -85,7 +86,8 @@ export async function POST(req: Request) {
                 driverId: driver.id,
                 parkSlotId: parkSlotId,
                 start: startDate,
-                end: endDate
+                end: endDate,
+                cancelledAt: null,
             }
         })
         //Successful response

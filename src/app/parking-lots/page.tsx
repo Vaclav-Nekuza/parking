@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from 'next/link';
 import { withAuth } from '../components/auth/withAuth';
 import { useSession } from '../contexts/session-context';
 
@@ -111,9 +112,15 @@ function ParkingLotsPageComponent() {
                                         <div className="text-2xl font-bold text-black mb-2">
                                             {house.price} CZK
                                         </div>
-                                        <button className="rounded-2xl px-6 py-2 bg-blue-400 text-white font-medium hover:opacity-90 transition-opacity">
+                                        <Link 
+                                            href={{
+                                                pathname: `/parking-lots/${house.id}/reserve`,
+                                                query: { name: house.address, pricePerHour: house.price }
+                                            }}
+                                            className="rounded-2xl px-6 py-2 bg-blue-400 text-white font-medium hover:opacity-90 transition-opacity"
+                                        >
                                             Book Now
-                                        </button>
+                                        </Link>
                                     </div>
                                 </div>
 

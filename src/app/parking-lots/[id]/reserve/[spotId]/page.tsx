@@ -18,9 +18,10 @@ export default function SpotDetailPage() {
   const q = useSearchParams();
 
   const areaName = q.get('name') ?? `Parking area ${params.id}`;
-  const spotLabel = params.spotId;
+  const spotLabel = q.get('spotLabel') ?? params.spotId;
   const mode = (q.get('mode') ?? 'park') as 'park' | 'reserve' | 'active';
   const pricePerHour = Number(q.get('pricePerHour') ?? 40);
+  const reservationId = q.get('reservationId'); // For active mode
 
   // PARK NOW state
   const [minutes, setMinutes] = useState(15);
@@ -29,6 +30,10 @@ export default function SpotDetailPage() {
 
   // PAYMENT
   const [selectedCard, setSelectedCard] = useState('Pre-saved card 1');
+
+  // API state
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   // RESERVE LATER state (lightweight vlastní kalendář + časy)
   const today = useMemo(() => new Date(), []);
@@ -51,6 +56,130 @@ export default function SpotDetailPage() {
 
   // ACTIVE state (odpočet)
   const [leftSec, setLeftSec] = useState(14 * 60); // 14 min demo
+
+  // Handler for creating reservation (Park Now)
+  const handleParkNow = async () => {
+    setIsSubmitting(true);
+    setApiError(null);
+
+    try {
+      const now = new Date();
+      const endTime = new Date(now.getTime() + minutes * 60 * 1000);
+
+      const response = await fetch('/api/reservation/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          parkSlotId: params.spotId,
+          start: now.toISOString(),
+          end: endTime.toISOString(),
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to create reservation');
+      }
+
+      const data = await response.json();
+      const newReservationId = data.reservation.id;
+
+      // Redirect to active parking page
+      router.push(`/parking-lots/${params.id}/reserve/${params.spotId}?mode=active&name=${encodeURIComponent(areaName)}&pricePerHour=${pricePerHour}&spotLabel=${encodeURIComponent(spotLabel)}&reservationId=${newReservationId}`);
+    } catch (err) {
+      setApiError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Handler for creating reservation (Reserve Later)
+  const handleReserveLater = async () => {
+    if (!pickedDate) {
+      setApiError('Please select a date');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setApiError(null);
+
+    try {
+      // Combine date and time
+      const [fromHour, fromMin] = fromTime.split(':').map(Number);
+      const [toHour, toMin] = toTime.split(':').map(Number);
+
+      const startDate = new Date(pickedDate);
+      startDate.setHours(fromHour, fromMin, 0, 0);
+
+      const endDate = new Date(pickedDate);
+      endDate.setHours(toHour, toMin, 0, 0);
+
+      // Validate time range
+      if (startDate >= endDate) {
+        setApiError('End time must be after start time');
+        return;
+      }
+
+      const response = await fetch('/api/reservation/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          parkSlotId: params.spotId,
+          start: startDate.toISOString(),
+          end: endDate.toISOString(),
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to create reservation');
+      }
+
+      const data = await response.json();
+      
+      // Show success message and redirect
+      alert(`Reservation confirmed for ${areaName} - Spot ${spotLabel} on ${pickedDate.toDateString()} from ${fromTime} to ${toTime}`);
+      router.push(`/parking-lots/${params.id}/reserve`);
+    } catch (err) {
+      setApiError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Handler for canceling reservation
+  const handleCancelReservation = async () => {
+    if (!reservationId) {
+      setApiError('No reservation ID found');
+      return;
+    }
+
+    if (!confirm('Are you sure you want to cancel this reservation?')) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    setApiError(null);
+
+    try {
+      const response = await fetch(`/api/reservation/${reservationId}`, {
+        method: 'PATCH',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to cancel reservation');
+      }
+
+      // Redirect back to parking lot list
+      router.push(`/parking-lots/${params.id}/reserve`);
+    } catch (err) {
+      setApiError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   useEffect(() => {
     if (mode !== 'active') return;
     const t = setInterval(() => setLeftSec((s) => Math.max(0, s - 1)), 1000);
@@ -71,6 +200,13 @@ export default function SpotDetailPage() {
         <p className="text-gray-500 mb-8">
           {areaName} • {pricePerHour} CZK/hour
         </p>
+
+        {/* Error message */}
+        {apiError && (
+          <div className="bg-red-100 text-red-700 p-4 rounded-2xl mb-4">
+            {apiError}
+          </div>
+        )}
 
         {/* PARK NOW */}
         {mode === 'park' && (
@@ -131,10 +267,11 @@ export default function SpotDetailPage() {
                 Back
               </Link>
               <button
-                className="rounded-2xl px-8 py-3 bg-blue-400 text-white font-medium hover:opacity-90"
-                onClick={() => router.push(`/parking-lots/${params.id}/reserve/${params.spotId}?mode=active&name=${encodeURIComponent(areaName)}`)}
+                className="rounded-2xl px-8 py-3 bg-blue-400 text-white font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={handleParkNow}
+                disabled={isSubmitting}
               >
-                Pay & Park
+                {isSubmitting ? 'Processing...' : 'Pay & Park'}
               </button>
             </div>
           </>
@@ -253,10 +390,11 @@ export default function SpotDetailPage() {
                 Back
               </Link>
               <button
-                className="rounded-2xl px-8 py-3 bg-blue-400 text-white font-medium hover:opacity-90"
-                onClick={() => alert(`Reserved ${areaName} - Spot ${spotLabel} on ${pickedDate?.toDateString()} ${fromTime}-${toTime}`)}
+                className="rounded-2xl px-8 py-3 bg-blue-400 text-white font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={handleReserveLater}
+                disabled={isSubmitting}
               >
-                Reserve
+                {isSubmitting ? 'Processing...' : 'Reserve'}
               </button>
             </div>
           </>
@@ -275,10 +413,11 @@ export default function SpotDetailPage() {
 
               <div className="flex gap-4">
                 <button 
-                  className="rounded-2xl px-6 py-3 border border-red-300 text-red-600 bg-red-50 hover:bg-red-100 font-medium" 
-                  onClick={() => router.back()}
+                  className="rounded-2xl px-6 py-3 border border-red-300 text-red-600 bg-red-50 hover:bg-red-100 font-medium disabled:opacity-50 disabled:cursor-not-allowed" 
+                  onClick={handleCancelReservation}
+                  disabled={isSubmitting}
                 >
-                  Cancel
+                  {isSubmitting ? 'Cancelling...' : 'Cancel'}
                 </button>
                 <button 
                   className="rounded-2xl px-6 py-3 bg-green-500 text-white font-medium hover:opacity-90" 
