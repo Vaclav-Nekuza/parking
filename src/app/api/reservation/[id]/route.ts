@@ -7,8 +7,8 @@ type RouteParams = {
   params: Promise<{ id: string }>;
 };
 
-//POST -> cancels a reservation
-export async function POST(req: Request, { params }: RouteParams) {
+//PATCH -> cancels a reservation
+export async function PATCH(req: Request, { params }: RouteParams) {
   try {
     //Google account session check
     const session = await getServerSession(authOptions);

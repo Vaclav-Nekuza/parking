@@ -163,7 +163,7 @@ export default function SpotDetailPage() {
 
     try {
       const response = await fetch(`/api/reservation/${reservationId}`, {
-        method: 'POST',
+        method: 'PATCH',
       });
 
       if (!response.ok) {
