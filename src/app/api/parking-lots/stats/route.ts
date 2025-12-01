@@ -45,6 +45,8 @@ interface BucketStats {
 interface ParkingHouseStats {
     parkingHouseId: string;
     address: string;
+    totalReservations: number;
+    totalCancelledReservations: number;
     buckets: BucketStats[];
 }
 
@@ -144,6 +146,10 @@ export async function GET(request: Request) {
             
             // Collect all reservations for this parking house
             const allReservations = house.ParkingSlot.flatMap(slot => slot.Reservation);
+            
+            // Calculate totals
+            const totalReservations = allReservations.length;
+            const totalCancelledReservations = allReservations.filter(r => r.cancelledAt !== null).length;
 
             // Generate buckets based on interval
             const bucketSize = intervalParam === "week" ? 7 : 1;
@@ -189,6 +195,8 @@ export async function GET(request: Request) {
             return {
                 parkingHouseId: house.id,
                 address: house.address,
+                totalReservations,
+                totalCancelledReservations,
                 buckets
             };
         });
