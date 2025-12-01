@@ -1,45 +1,58 @@
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 // Helper function to get authenticated admin from session
-async function getAuthenticatedAdmin(request: Request) {
-    const sessionToken = request.headers.get('authorization')?.replace('Bearer ', '') || 
-                        request.headers.get('x-session-token');
-                        
-    if (!sessionToken) {
+async function getAuthenticatedAdmin() {
+    const session = await getServerSession(authOptions);
+    
+    if (!session || !session.user?.email) {
         return null;
     }
     
-    const session = await prisma.session.findUnique({
-        where: { sessionToken },
-        include: { admin: true }
+    const admin = await prisma.admin.findUnique({
+        where: { email: session.user.email },
     });
     
-    if (!session || !session.isActive || session.expires < new Date() || session.userType !== 'admin') {
+    if (!admin) {
         return null;
     }
     
-    return session.admin;
+    const userSession = await prisma.session.findFirst({
+        where: {
+            isActive: true,
+            expires: { gt: new Date() },
+            adminId: admin.id,
+            userType: "admin",
+        },
+    });
+    
+    if (!userSession) {
+        return null;
+    }
+    
+    return admin;
 }
 
-interface DailyUsageStats {
-    date: string;
-    usagePercentage: number;
-    totalSlots: number;
-    occupiedSlots: number;
+interface BucketStats {
+    startDate: string;
+    endDate: string;
+    reservations: number;
+    cancelledReservations: number;
 }
 
 interface ParkingHouseStats {
     parkingHouseId: string;
     address: string;
-    dailyUsage: DailyUsageStats[];
+    buckets: BucketStats[];
 }
 
-// GET /api/parking-lots/stats?days=30
+// GET /api/parking-lots/stats?days=30&interval=day
 export async function GET(request: Request) {
     try {
         // Get authenticated admin from session
-        const admin = await getAuthenticatedAdmin(request);
+        const admin = await getAuthenticatedAdmin();
         
         if (!admin) {
             return NextResponse.json(
@@ -51,6 +64,15 @@ export async function GET(request: Request) {
         // Parse query parameters
         const { searchParams } = new URL(request.url);
         const daysParam = searchParams.get("days");
+        const intervalParam = searchParams.get("interval") || "day";
+        
+        // Validate interval parameter
+        if (intervalParam !== "day" && intervalParam !== "week") {
+            return NextResponse.json(
+                { error: "Invalid interval parameter. Must be 'day' or 'week'." },
+                { status: 400 }
+            );
+        }
         
         // Validate days parameter
         let days = 30; // default
@@ -73,8 +95,10 @@ export async function GET(request: Request) {
 
         // Calculate date range
         const endDate = new Date();
+        endDate.setHours(23, 59, 59, 999);
         const startDate = new Date();
         startDate.setDate(startDate.getDate() - days);
+        startDate.setHours(0, 0, 0, 0);
 
         // Get all parking houses owned by this admin
         const parkingHouses = await prisma.parkingHouse.findMany({
@@ -116,46 +140,56 @@ export async function GET(request: Request) {
 
         // Calculate statistics for each parking house
         const stats: ParkingHouseStats[] = parkingHouses.map(house => {
-            const totalSlots = house.ParkingSlot.length;
-            const dailyUsage: DailyUsageStats[] = [];
+            const buckets: BucketStats[] = [];
+            
+            // Collect all reservations for this parking house
+            const allReservations = house.ParkingSlot.flatMap(slot => slot.Reservation);
 
-            // Generate stats for each day
-            for (let i = 0; i < days; i++) {
-                const currentDate = new Date(startDate);
-                currentDate.setDate(currentDate.getDate() + i);
-                const dayStart = new Date(currentDate.setHours(0, 0, 0, 0));
-                const dayEnd = new Date(currentDate.setHours(23, 59, 59, 999));
-
-                // Count occupied slots for this day
-                let occupiedSlots = 0;
+            // Generate buckets based on interval
+            const bucketSize = intervalParam === "week" ? 7 : 1;
+            
+            for (let i = 0; i < days; i += bucketSize) {
+                const bucketStart = new Date(startDate);
+                bucketStart.setDate(startDate.getDate() + i);
+                bucketStart.setHours(0, 0, 0, 0);
                 
-                for (const slot of house.ParkingSlot) {
-                    // Check if any reservation overlaps with this day
-                    const hasReservation = slot.Reservation.some(reservation => {
-                        return reservation.start <= dayEnd && reservation.end >= dayStart;
-                    });
+                const bucketEnd = new Date(bucketStart);
+                bucketEnd.setDate(bucketStart.getDate() + bucketSize - 1);
+                bucketEnd.setHours(23, 59, 59, 999);
+                
+                // Don't let bucket extend beyond the end date
+                if (bucketEnd > endDate) {
+                    bucketEnd.setTime(endDate.getTime());
+                }
+
+                // Count reservations in this bucket
+                let reservations = 0;
+                let cancelledReservations = 0;
+                
+                for (const reservation of allReservations) {
+                    // Check if reservation overlaps with this bucket
+                    const overlaps = reservation.start <= bucketEnd && reservation.end >= bucketStart;
                     
-                    if (hasReservation) {
-                        occupiedSlots++;
+                    if (overlaps) {
+                        reservations++;
+                        if (reservation.cancelledAt !== null) {
+                            cancelledReservations++;
+                        }
                     }
                 }
 
-                const usagePercentage = totalSlots > 0 
-                    ? Math.round((occupiedSlots / totalSlots) * 100 * 100) / 100 // Round to 2 decimal places
-                    : 0;
-
-                dailyUsage.push({
-                    date: dayStart.toISOString().split('T')[0], // Format as YYYY-MM-DD
-                    usagePercentage,
-                    totalSlots,
-                    occupiedSlots
+                buckets.push({
+                    startDate: bucketStart.toISOString().split('T')[0],
+                    endDate: bucketEnd.toISOString().split('T')[0],
+                    reservations,
+                    cancelledReservations
                 });
             }
 
             return {
                 parkingHouseId: house.id,
                 address: house.address,
-                dailyUsage
+                buckets
             };
         });
 
