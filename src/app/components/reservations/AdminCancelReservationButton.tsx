@@ -4,14 +4,12 @@ import { useState } from "react";
 
 type AdminCancelReservationButtonProps = {
     reservationId: string;           // ID rezervace z DB
-    initialCancelled?: boolean;      // true, pokud už je zrušená
-    onCancelled?: () => void;        // callback po úspěchu
+    initialCancelled?: boolean;      // true, pokud už je zrušená (cancelledAt != null)
 };
 
 export default function AdminCancelReservationButton({
                                                          reservationId,
                                                          initialCancelled = false,
-                                                         onCancelled,
                                                      }: AdminCancelReservationButtonProps) {
     const [isCancelling, setIsCancelling] = useState(false);
     const [isCancelled, setIsCancelled] = useState(initialCancelled);
@@ -45,9 +43,7 @@ export default function AdminCancelReservationButton({
             }
 
 
-
             setIsCancelled(true);
-            if (onCancelled) onCancelled();
         } catch (e: unknown) {
             if (e instanceof Error) {
                 setError(e.message || "Došlo k chybě při rušení rezervace.");
@@ -59,7 +55,7 @@ export default function AdminCancelReservationButton({
         }
     };
 
-    // když už je zrušená, jen zobrazíme stav
+    // když už je zrušená, jen zobrazí stav
     if (isCancelled) {
         return (
             <span className="text-xs text-gray-500">
