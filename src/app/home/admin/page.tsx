@@ -9,6 +9,7 @@ import {
   ParkingHouse,
   ParkingHouseList,
 } from "../../components/parking/parkingHouseList";
+import StatisticsDashboard from "../../components/admin/StatisticsDashboard";
 
 import styles from "./admin-home.module.css";
 
@@ -20,16 +21,13 @@ function AdminHomePageComponent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // src/app/home/admin/page.tsx (snippet)
-
   useEffect(() => {
     async function fetchParkingHouses() {
       try {
         setLoading(true);
         setError(null);
 
-        // ⬇️ use the scoped version for admin
-        const response = await fetch("/api/parkinglots?scope=mine");
+        const response = await fetch("/api/parking-lots?scope=mine");
         if (!response.ok) {
           throw new Error("Failed to fetch parking houses");
         }
@@ -71,9 +69,13 @@ function AdminHomePageComponent() {
           </button>
         </div>
 
-        {/* Content */}
+        {/* Statistics */}
         <section className={styles.section}>
-          {/* Add button + heading */}
+          <StatisticsDashboard />
+        </section>
+
+        {/* Parking lots */}
+        <section className={styles.section}>
           <div>
             <button
               type="button"
@@ -86,7 +88,6 @@ function AdminHomePageComponent() {
             <h2 className={styles.sectionTitle}>My parking lots</h2>
           </div>
 
-          {/* List of parking houses */}
           <ParkingHouseList
             parkingHouses={parkingHouses}
             loading={loading}
