@@ -73,21 +73,23 @@ export default function SpotDetailPage() {
   const [leftSec, setLeftSec] = useState(0);
   const [activeReservation, setActiveReservation] =
     useState<ReservationDetail | null>(null);
+  const [isLoadingReservation, setIsLoadingReservation] = useState(true);
 
   // po načtení rezervace v ACTIVE režimu spočítej leftSec
   useEffect(() => {
     if (mode !== "active" || !reservationId) return;
 
-    let cancelled = false;
+    setIsLoadingReservation(true);
+    const controller = new AbortController();
 
     (async () => {
       try {
         const res = await fetch(
-          `/api/reservation/detail?id=${encodeURIComponent(reservationId)}`
+          `/api/reservation/detail?id=${encodeURIComponent(reservationId)}`,
+          { signal: controller.signal }
         );
         if (!res.ok) return;
         const data = (await res.json()) as ReservationDetail;
-        if (cancelled) return;
 
         setActiveReservation(data);
 
@@ -96,12 +98,18 @@ export default function SpotDetailPage() {
         const secs = Math.max(0, Math.floor((endMs - nowMs) / 1000));
         setLeftSec(secs);
       } catch (e) {
-        console.error("Failed to load active reservation", e);
+        if ((e as Error).name !== 'AbortError') {
+          console.error("Failed to load active reservation", e);
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsLoadingReservation(false);
+        }
       }
     })();
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, [mode, reservationId]);
 
@@ -384,10 +392,35 @@ export default function SpotDetailPage() {
                 Parking in progress:
               </h2>
 
-              <div className="text-5xl text-blue-600 font-bold mb-2">
-                {Math.floor(leftSec / 60)} min{" "}
-                {String(leftSec % 60).padStart(2, "0")} left
-              </div>
+              {isLoadingReservation ? (
+                <div className="flex items-center h-[60px] mb-2">
+                  <svg
+                    className="animate-spin h-10 w-10 text-blue-600"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                </div>
+              ) : (
+                <div className="text-5xl text-blue-600 font-bold mb-2">
+                  {Math.floor(leftSec / 60)} min{" "}
+                  {String(leftSec % 60).padStart(2, "0")} left
+                </div>
+              )}
               <div className="text-green-600 font-medium mb-6">
                 Free until {freeUntilActive}
               </div>

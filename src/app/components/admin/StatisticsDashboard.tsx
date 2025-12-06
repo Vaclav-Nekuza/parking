@@ -46,7 +46,7 @@ export default function StatisticsDashboard() {
 
   // načtení dat
   useEffect(() => {
-    let cancelled = false;
+    const controller = new AbortController();
 
     async function fetchStats() {
       try {
@@ -54,44 +54,45 @@ export default function StatisticsDashboard() {
         setError(null);
 
         const res = await fetch(
-          `/api/parking-lots/stats?days=${days}&interval=${interval}`
+          `/api/parking-lots/stats?days=${days}&interval=${interval}`,
+          { signal: controller.signal }
         );
         if (!res.ok) {
           const body = await res.json().catch(() => null);
           throw new Error(
-            `Failed to fetch statistics (${res.status} ${
-              res.statusText
+            `Failed to fetch statistics (${res.status} ${res.statusText
             })${body ? `: ${JSON.stringify(body)}` : ""}`
           );
         }
 
         const data = (await res.json()) as ParkingHouseStats[];
-        if (!cancelled) {
-          setStats(data);
-          // když nemám vybráno nic nebo předchozí id neexistuje, vyberu první
-          if (
-            data.length > 0 &&
-            selectedHouseId !== "all" &&
-            !data.some((h) => h.parkingHouseId === selectedHouseId)
-          ) {
-            setSelectedHouseId("all");
-          }
+
+        setStats(data);
+        // když nemám vybráno nic nebo předchozí id neexistuje, vyberu první
+        if (
+          data.length > 0 &&
+          selectedHouseId !== "all" &&
+          !data.some((h) => h.parkingHouseId === selectedHouseId)
+        ) {
+          setSelectedHouseId("all");
         }
       } catch (err) {
-        if (!cancelled) {
+        if ((err as Error).name !== 'AbortError') {
           setError(
             err instanceof Error ? err.message : "Failed to load statistics"
           );
         }
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
     }
 
     fetchStats();
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, [days, interval, selectedHouseId]);
 
