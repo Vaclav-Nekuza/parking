@@ -131,7 +131,7 @@ export default function ProlongReservationPage() {
   };
 
   return (
-    <div className="min-h-screen flex justify-center px-4 py-10">
+    <div className="min-h-screen flex justify-center px-4 py-10 bg-white text-black">
       <div className="max-w-2xl w-full">
         <h1 className="text-4xl font-bold mb-2">
           Prolong spot {reservation.parkingSlot.parkingHouse.address}
