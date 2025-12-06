@@ -27,7 +27,11 @@ function AdminHomePageComponent() {
         setLoading(true);
         setError(null);
 
-        const response = await fetch("/api/parking-lots?scope=mine");
+        const response = await fetch("/api/parking-lots?scope=mine", {
+          cache: "no-store",
+          headers: { Pragma: "no-cache" },
+        });
+
         if (!response.ok) {
           throw new Error("Failed to fetch parking houses");
         }

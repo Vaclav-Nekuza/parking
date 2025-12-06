@@ -57,8 +57,6 @@ export async function GET() {
       { error: "Internal Server Error" },
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect().catch(() => { });
   }
 }
 
@@ -191,8 +189,6 @@ export async function POST(req: Request) {
         { error: "Failed to create parking lot" },
         { status: 500 }
       );
-    } finally {
-      await prisma.$disconnect().catch(() => { });
     }
   } catch (err) {
     console.error("POST /api/parking-lots unexpected error:", err);
