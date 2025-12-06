@@ -17,8 +17,38 @@ export async function GET(req: NextRequest) {
   try {
     // 🔹 Case 1: /api/parkinglots  (no special scope) → all lots (driver use case)
     if (scope !== "mine") {
-      const data = await prisma.parkingHouse.findMany();
-      return NextResponse.json(data, { status: 200 });
+      const houses = await prisma.parkingHouse.findMany();
+      
+      // Calculate availability for each parking house
+      const housesWithAvailability = await Promise.all(
+        houses.map(async (house) => {
+          // Get total number of parking slots
+          const totalSlots = await prisma.parkingSlot.count({
+            where: { parkHouseId: house.id },
+          });
+
+          // Get number of occupied slots (slots with active reservations)
+          const now = new Date();
+          const occupiedSlots = await prisma.reservation.count({
+            where: {
+              parkSlot: { parkHouseId: house.id },
+              start: { lte: now },
+              end: { gte: now },
+              cancelledAt: null,
+            },
+          });
+
+          const freeSlots = totalSlots - occupiedSlots;
+
+          return {
+            ...house,
+            totalSlots,
+            freeSlots,
+          };
+        })
+      );
+
+      return NextResponse.json(housesWithAvailability, { status: 200 });
     }
 
     // 🔹 Case 2: /api/parkinglots?scope=mine → only current admin's lots

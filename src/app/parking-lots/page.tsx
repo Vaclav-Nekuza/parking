@@ -11,6 +11,8 @@ type ParkingHouse = {
     address: string;
     price: number;
     createdAt: string;
+    totalSlots: number;
+    freeSlots: number;
 };
 
 function ParkingLotsPageComponent() {
@@ -36,6 +38,33 @@ function ParkingLotsPageComponent() {
         }
 
         fetchParkingHouses();
+    }, []);
+
+    // Refresh availability every 15 seconds
+    useEffect(() => {
+        async function refreshAvailability() {
+            try {
+                const response = await fetch('/api/parkinglots/availability');
+                if (!response.ok) return;
+                
+                const availability: Array<{ id: string; totalSlots: number; freeSlots: number }> = await response.json();
+                
+                setParkingHouses(prevHouses => 
+                    prevHouses.map(house => {
+                        const updated = availability.find(a => a.id === house.id);
+                        return updated 
+                            ? { ...house, totalSlots: updated.totalSlots, freeSlots: updated.freeSlots }
+                            : house;
+                    })
+                );
+            } catch (err) {
+                // Silently fail to avoid disrupting user experience
+                console.error('Failed to refresh availability:', err);
+            }
+        }
+
+        const interval = setInterval(refreshAvailability, 15000);
+        return () => clearInterval(interval);
     }, []);
 
     function formatDate(dateString: string): string {
@@ -100,8 +129,13 @@ function ParkingLotsPageComponent() {
                                         <div className="text-xl font-semibold text-black mb-2">
                                             {house.address}
                                         </div>
-                                        <div className="text-sm text-gray-500">
-                                            Added: {formatDate(house.createdAt)}
+                                        <div className="flex items-center gap-4 text-sm">
+                                            <span className="text-gray-500">
+                                                Added: {formatDate(house.createdAt)}
+                                            </span>
+                                            <span className={`font-medium ${house.freeSlots > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                Availability: {house.freeSlots}/{house.totalSlots}
+                                            </span>
                                         </div>
                                     </div>
 
