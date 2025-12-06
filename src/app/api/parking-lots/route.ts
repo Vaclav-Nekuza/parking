@@ -1,15 +1,33 @@
-// app/api/parking-lots/route.ts
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getAuthenticatedAdmin } from "@/lib/server-auth";
 
-/** GET -> list all parking lots */
+/** GET -> list all parking lots for the authenticated admin */
 export async function GET() {
   try {
-    // Fetch all parking houses and calculate their capacity (number of parking slots)
+    const admin = await getAuthenticatedAdmin();
+
+    if (!admin) {
+      return NextResponse.json(
+        { error: "Authentication required. Please log in as an admin to view your parking lots." },
+        { status: 401 }
+      );
+    }
+
+    // Fetch all parking houses OWNER BY THIS ADMIN and calculate their capacity (number of parking slots)
     const houses = await prisma.parkingHouse.findMany({
-      select: { id: true, address: true, price: true },
+      where: {
+        adminId: admin.id
+      },
+      select: {
+        id: true,
+        address: true,
+        price: true,
+        createdAt: true,
+        adminId: true,
+      },
       orderBy: { createdAt: "desc" },
     });
 
@@ -22,7 +40,9 @@ export async function GET() {
           id: h.id,
           address: h.address,
           capacity,
-          pricePerHour: h.price,
+          price: h.price,
+          createdAt: h.createdAt.toISOString(),
+          adminId: h.adminId,
         };
       })
     );
@@ -30,12 +50,15 @@ export async function GET() {
     return NextResponse.json(withCapacity, { status: 200 });
   } catch (err) {
     console.error("GET /api/parking-lots failed:", err);
+    if (err instanceof Error) {
+      console.error(err.stack);
+    }
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 }
     );
   } finally {
-    await prisma.$disconnect().catch(() => {});
+    await prisma.$disconnect().catch(() => { });
   }
 }
 
@@ -125,7 +148,13 @@ export async function POST(req: Request) {
           address: address.trim(),
           price: parsedPricePerHour,
         },
-        select: { id: true, address: true, price: true },
+        select: {
+          id: true,
+          address: true,
+          price: true,
+          createdAt: true,
+          adminId: true,
+        },
       });
 
       // 4) Create parking slots (according to capacity)
@@ -144,7 +173,9 @@ export async function POST(req: Request) {
           id: house.id,
           address: house.address,
           capacity: parsedCapacity,
-          pricePerHour: house.price,
+          price: house.price,
+          createdAt: house.createdAt.toISOString(),
+          adminId: house.adminId,
         },
         { status: 201 }
       );
@@ -161,7 +192,7 @@ export async function POST(req: Request) {
         { status: 500 }
       );
     } finally {
-      await prisma.$disconnect().catch(() => {});
+      await prisma.$disconnect().catch(() => { });
     }
   } catch (err) {
     console.error("POST /api/parking-lots unexpected error:", err);
