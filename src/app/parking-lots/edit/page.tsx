@@ -134,17 +134,18 @@ function EditParkingLotPageComponent() {
 
       if (!res.ok) {
         const errorMsg =
-          data &&
-          typeof data === "object" &&
-          "error" in data &&
-          typeof (data as { error: unknown }).error === "string"
-            ? (data as { error: string }).error
-            : `Failed to update the parking lot. (status ${res.status}).`;
+            data &&
+            typeof data === "object" &&
+            "error" in data &&
+            typeof (data as { error: unknown }).error === "string"
+                ? (data as { error: string }).error
+                : `Failed to update the parking lot. (status ${res.status}).`;
         setServerError(errorMsg);
         return;
       }
 
       setServerSuccess("The parking lot was successfully updated.");
+      router.replace("/home/admin");
     } catch (error) {
       console.error("PUT /api/parking-lots/[id] failed:", error);
       setServerError("Error communicating with the server.");
