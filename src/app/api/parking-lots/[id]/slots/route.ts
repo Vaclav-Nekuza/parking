@@ -45,7 +45,7 @@ export async function GET(req: Request, { params }: RouteParams) {
             cancelledAt: null, // Only consider non-cancelled reservations
           },
           orderBy: { start: "asc" },
-          select: { start: true, end: true },
+          select: { id: true, start: true, end: true, driverId: true },
         });
 
         let status;
@@ -57,6 +57,8 @@ export async function GET(req: Request, { params }: RouteParams) {
           status = {
             state: "busy" as const,
             freeFrom: currentReservation.end.toISOString(),
+            reservationId: currentReservation.id,
+            driverId: currentReservation.driverId,
           };
         } else {
           // Free now but reserved later
