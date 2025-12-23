@@ -15,10 +15,24 @@ type ParkingHouse = {
     freeSlots: number;
 };
 
+type ActiveReservation = {
+    id: string;
+    start: string;
+    end: string;
+    parkSlotId: string;
+    parkingHouse: {
+        id: string;
+        address: string;
+        price: number;
+    };
+};
+
 function ParkingLotsPageComponent() {
     const { logout } = useSession();
     const [parkingHouses, setParkingHouses] = useState<ParkingHouse[]>([]);
+    const [activeReservations, setActiveReservations] = useState<ActiveReservation[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadingReservations, setLoadingReservations] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
@@ -37,7 +51,23 @@ function ParkingLotsPageComponent() {
             }
         }
 
+        async function fetchActiveReservations() {
+            try {
+                setLoadingReservations(true);
+                const response = await fetch('/api/reservation/my-active');
+                if (response.ok) {
+                    const data = await response.json();
+                    setActiveReservations(data);
+                }
+            } catch (err) {
+                console.error('Failed to fetch active reservations:', err);
+            } finally {
+                setLoadingReservations(false);
+            }
+        }
+
         fetchParkingHouses();
+        fetchActiveReservations();
     }, []);
 
     // Refresh availability every 15 seconds
@@ -75,6 +105,30 @@ function ParkingLotsPageComponent() {
         });
     }
 
+    function formatTime(dateString: string): string {
+        return new Date(dateString).toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+
+    function getTimeRemaining(endDate: string): string {
+        const now = new Date();
+        const end = new Date(endDate);
+        const diffMs = end.getTime() - now.getTime();
+
+        if (diffMs <= 0) return 'Expired';
+
+        const diffMins = Math.floor(diffMs / 60000);
+        const hours = Math.floor(diffMins / 60);
+        const mins = diffMins % 60;
+
+        if (hours > 0) {
+            return `${hours}h ${mins}m left`;
+        }
+        return `${mins}m left`;
+    }
+
     return (
         <main className="min-h-screen bg-white">
             <div className="max-w-4xl mx-auto px-6 py-10">
@@ -94,6 +148,72 @@ function ParkingLotsPageComponent() {
                         Logout
                     </button>
                 </div>
+
+                {loadingReservations && (
+                    <div className="mb-8 bg-gray-50 border border-gray-200 rounded-2xl p-6">
+                        <div className="text-center py-4 text-gray-500">Loading your reservations...</div>
+                    </div>
+                )}
+
+                {!loadingReservations && activeReservations.length === 0 && (
+                    <div className="mb-8 bg-gray-50 border border-gray-200 rounded-2xl p-6">
+                        <div className="text-center py-4 text-gray-500">You don't have any active reservations</div>
+                    </div>
+                )}
+
+                {!loadingReservations && activeReservations.length > 0 && (
+                    <div className="mb-8 bg-blue-50 border border-blue-200 rounded-2xl p-6">
+                        <h2 className="text-2xl font-bold text-black mb-4">Your Active Reservations</h2>
+                        <div className="space-y-3">
+                            {activeReservations.map((reservation) => {
+                                const isParkingNow = new Date(reservation.start) <= new Date();
+                                
+                                return (
+                                    <Link
+                                        key={reservation.id}
+                                        href={{
+                                            pathname: `/parking-lots/${reservation.parkingHouse.id}/reserve/${reservation.parkSlotId}`,
+                                            query: {
+                                                mode: 'active',
+                                                name: reservation.parkingHouse.address,
+                                                pricePerHour: reservation.parkingHouse.price,
+                                                spotLabel: 'Reserved',
+                                                reservationId: reservation.id
+                                            }
+                                        }}
+                                        className="block bg-white rounded-2xl p-4 hover:shadow-md transition-shadow"
+                                    >
+                                        <div className="flex justify-between items-start">
+                                            <div>
+                                                <div className="font-semibold text-black mb-1">
+                                                    {reservation.parkingHouse.address}
+                                                </div>
+                                                <div className="text-sm text-gray-600">
+                                                    {isParkingNow ? (
+                                                        <>Parking until {formatTime(reservation.end)}</>
+                                                    ) : (
+                                                        <>Reserved: {formatDate(reservation.start)} • {formatTime(reservation.start)} - {formatTime(reservation.end)}</>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                {isParkingNow ? (
+                                                    <div className="text-green-600 font-semibold text-sm">
+                                                        {getTimeRemaining(reservation.end)}
+                                                    </div>
+                                                ) : (
+                                                    <div className="text-blue-600 font-semibold text-sm">
+                                                        Upcoming
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </Link>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
 
                 {loading && (
                     <div className="flex justify-center items-center py-12">
