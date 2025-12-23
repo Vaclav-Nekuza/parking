@@ -157,7 +157,7 @@ function ParkingLotsPageComponent() {
 
                 {!loadingReservations && activeReservations.length === 0 && (
                     <div className="mb-8 bg-gray-50 border border-gray-200 rounded-2xl p-6">
-                        <div className="text-center py-4 text-gray-500">You don't have any active reservations</div>
+                        <div className="text-center py-4 text-gray-500">You don&apos;t have any active reservations</div>
                     </div>
                 )}
 
