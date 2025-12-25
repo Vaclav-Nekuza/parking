@@ -20,6 +20,10 @@ type ReservationDetail = {
   id: string;
   start: string;
   end: string;
+  serverNow?: string;
+  graceEndsAt?: string;
+  phase?: 'active' | 'grace' | 'expired' | 'cancelled';
+  endingSoon?: boolean;
 };
 
 export default function SpotDetailPage() {
@@ -71,6 +75,8 @@ export default function SpotDetailPage() {
 
   // ACTIVE mode – zbývající sekundy podle reservation.end
   const [leftSec, setLeftSec] = useState(0);
+  const [isGrace, setIsGrace] = useState(false);
+  const [endingSoon, setEndingSoon] = useState(false);
   const [activeReservation, setActiveReservation] =
     useState<ReservationDetail | null>(null);
   const [isLoadingReservation, setIsLoadingReservation] = useState(true);
@@ -92,11 +98,14 @@ export default function SpotDetailPage() {
         const data = (await res.json()) as ReservationDetail;
 
         setActiveReservation(data);
-
-        const endMs = new Date(data.end).getTime();
+        const targetMs = data.phase === 'active'
+          ? new Date(data.end).getTime()
+          : data.graceEndsAt ? new Date(data.graceEndsAt).getTime() : new Date(data.end).getTime();
         const nowMs = Date.now();
-        const secs = Math.max(0, Math.floor((endMs - nowMs) / 1000));
+        const secs = Math.max(0, Math.floor((targetMs - nowMs) / 1000));
         setLeftSec(secs);
+        setIsGrace(data.phase === 'grace');
+        setEndingSoon(!!data.endingSoon);
       } catch (e) {
         if ((e as Error).name !== 'AbortError') {
           console.error("Failed to load active reservation", e);
@@ -261,12 +270,14 @@ export default function SpotDetailPage() {
   // free until text v active režimu podle reservation.end
   const freeUntilActive = useMemo(() => {
     if (!activeReservation) return freeUntilStatic;
-    const end = new Date(activeReservation.end);
+    const end = isGrace && activeReservation.graceEndsAt
+      ? new Date(activeReservation.graceEndsAt)
+      : new Date(activeReservation.end);
     return end.toLocaleTimeString("cs-CZ", {
       hour: "2-digit",
       minute: "2-digit",
     });
-  }, [activeReservation, freeUntilStatic]);
+  }, [activeReservation, freeUntilStatic, isGrace]);
 
   return (
     <main className="min-h-screen bg-white">
@@ -416,13 +427,25 @@ export default function SpotDetailPage() {
                   </svg>
                 </div>
               ) : (
-                <div className="text-5xl text-blue-600 font-bold mb-2">
-                  {Math.floor(leftSec / 60)} min{" "}
-                  {String(leftSec % 60).padStart(2, "0")} left
-                </div>
+                <>
+                  {endingSoon && !isGrace && (
+                    <div className="text-red-600 font-semibold text-sm mb-1">
+                      Ending in under 5 minutes
+                    </div>
+                  )}
+                  {isGrace && (
+                    <div className="text-orange-600 font-semibold text-sm mb-1">
+                      Grace period
+                    </div>
+                  )}
+                  <div className={`${isGrace ? 'text-orange-600' : 'text-blue-600'} text-5xl font-bold mb-2`}>
+                    {Math.floor(leftSec / 60)} min{" "}
+                    {String(leftSec % 60).padStart(2, "0")} left
+                  </div>
+                </>
               )}
-              <div className="text-green-600 font-medium mb-6">
-                Free until {freeUntilActive}
+              <div className={`${isGrace ? 'text-orange-600' : 'text-green-600'} font-medium mb-6`}>
+                {isGrace ? 'Grace until' : 'Free until'} {freeUntilActive}
               </div>
 
               <div className="flex gap-4">

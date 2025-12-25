@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import authOptions from "@/lib/auth";
+import { RESERVATION_GRACE_MINUTES, RESERVATION_ENDING_SOON_MINUTES } from "@/lib/config";
 
 export async function GET(req: Request) {
   const isValidObjectId = (id: string) => /^[a-fA-F0-9]{24}$/.test(id);
@@ -74,20 +75,41 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    // Derived timing/status
+    const now = new Date();
+    const end = reservation.end;
+    const graceEndsAt = new Date(end.getTime() + RESERVATION_GRACE_MINUTES * 60_000);
+    const isCancelled = !!reservation.cancelledAt;
+    const phase = isCancelled
+      ? "cancelled"
+      : now < end
+        ? "active"
+        : now < graceEndsAt
+          ? "grace"
+          : "expired";
+    const endingSoon = !isCancelled && phase === "active" && (end.getTime() - now.getTime()) <= RESERVATION_ENDING_SOON_MINUTES * 60_000;
+
     // Struktura pro FE (ProlongPage)
     const responseBody = {
-    id: reservation.id,
-    start: reservation.start,
-    end: reservation.end,
-    parkingSlot: {
+      id: reservation.id,
+      start: reservation.start,
+      end: reservation.end,
+      parkingSlot: {
         id: parkSlot.id,
         parkingHouse: {
-            id: parkingHouse.id,
-            address: parkingHouse.address,
-            price: parkingHouse.price,
-    },
-  },
-};
+          id: parkingHouse.id,
+          address: parkingHouse.address,
+          price: parkingHouse.price,
+        },
+      },
+      // New helper fields for UI logic
+      serverNow: now.toISOString(),
+      graceEndsAt: graceEndsAt.toISOString(),
+      phase, // 'active' | 'grace' | 'expired' | 'cancelled'
+      endingSoon,
+      graceMinutes: RESERVATION_GRACE_MINUTES,
+      endingSoonMinutes: RESERVATION_ENDING_SOON_MINUTES,
+    };
 
 
 
