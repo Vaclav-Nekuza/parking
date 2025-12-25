@@ -3,10 +3,11 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
+import { useSession } from '../../../contexts/session-context';
 
 type SpotStatus =
   | { state: 'free-now'; freeUntil: string | null }
-  | { state: 'busy';     freeFrom: string };
+  | { state: 'busy';     freeFrom: string; reservationId: string; driverId: string };
 
 type Spot = {
   id: string;
@@ -30,6 +31,7 @@ type ApiResponse = {
 export default function ReserveAreaPage() {
   const params = useParams<{ id: string }>();
   const search = useSearchParams();
+  const { user } = useSession();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -103,6 +105,8 @@ export default function ReserveAreaPage() {
           {spots.map((spot) => {
             const isAvailableNow = spot.status.state === 'free-now';
             const statusText = formatStatusText(spot.status);
+            const isBusy = spot.status.state === 'busy';
+            const isOwnReservation = isBusy && spot.status.state === 'busy' && spot.status.driverId === user?.id;
 
             return (
               <div 
@@ -129,19 +133,37 @@ export default function ReserveAreaPage() {
                 </div>
 
                 <div className="flex gap-3">
-                  <Link
-                    href={{
-                      pathname: `/parking-lots/${params.id}/reserve/${spot.id}`,
-                      query: { mode: 'park', name: areaName, pricePerHour, spotLabel: spot.label },
-                    }}
-                    className={`rounded-2xl px-6 py-3 font-medium ${
-                      isAvailableNow
-                        ? 'bg-green-500 text-white hover:opacity-90'
-                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    }`}
-                  >
-                    Park now
-                  </Link>
+                  {isOwnReservation && spot.status.state === 'busy' ? (
+                    <Link
+                      href={{
+                        pathname: `/parking-lots/${params.id}/reserve/${spot.id}`,
+                        query: { 
+                          mode: 'active',
+                          name: areaName,
+                          pricePerHour,
+                          spotLabel: spot.label,
+                          reservationId: spot.status.reservationId
+                        },
+                      }}
+                      className="rounded-2xl px-6 py-3 font-medium bg-blue-500 text-white hover:opacity-90"
+                    >
+                      View reservation
+                    </Link>
+                  ) : (
+                    <Link
+                      href={{
+                        pathname: `/parking-lots/${params.id}/reserve/${spot.id}`,
+                        query: { mode: 'park', name: areaName, pricePerHour, spotLabel: spot.label },
+                      }}
+                      className={`rounded-2xl px-6 py-3 font-medium ${
+                        isAvailableNow
+                          ? 'bg-green-500 text-white hover:opacity-90'
+                          : 'bg-gray-300 text-gray-500 cursor-not-allowed pointer-events-none'
+                      }`}
+                    >
+                      Park now
+                    </Link>
+                  )}
                   <Link
                     href={{
                       pathname: `/parking-lots/${params.id}/reserve/${spot.id}`,
