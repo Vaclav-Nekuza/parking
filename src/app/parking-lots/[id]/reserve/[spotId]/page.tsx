@@ -52,6 +52,27 @@ export default function SpotDetailPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
 
+  // RESERVE LATER state (feature disabled)
+  const today = useMemo(() => new Date(), []);
+  const [monthCursor, setMonthCursor] = useState(
+    new Date(today.getFullYear(), today.getMonth(), 1)
+  );
+  const [pickedDate, setPickedDate] = useState<Date | null>(today);
+  const [fromTime, setFromTime] = useState("08:00");
+  const [toTime, setToTime] = useState("08:30");
+
+  const daysInMonth = useMemo(() => {
+    const year = monthCursor.getFullYear();
+    const month = monthCursor.getMonth();
+    const firstDow = new Date(year, month, 1).getDay();
+    const count = new Date(year, month + 1, 0).getDate();
+    const cells: (Date | null)[] = [];
+    const pad = (firstDow + 6) % 7;
+    for (let i = 0; i < pad; i++) cells.push(null);
+    for (let d = 1; d <= count; d++) cells.push(new Date(year, month, d));
+    return cells;
+  }, [monthCursor]);
+
   // ACTIVE mode – zbývající sekundy podle reservation.end
   const [leftSec, setLeftSec] = useState(0);
   const [isGrace, setIsGrace] = useState(false);
@@ -146,6 +167,62 @@ export default function SpotDetailPage() {
     }
   };
 
+  // Handler for creating reservation (Reserve Later)
+  const handleReserveLater = async () => {
+    if (!pickedDate) {
+      setApiError("Please select a date");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setApiError(null);
+
+    try {
+      const [fromHour, fromMin] = fromTime.split(":").map(Number);
+      const [toHour, toMin] = toTime.split(":").map(Number);
+
+      const startDate = new Date(pickedDate);
+      startDate.setHours(fromHour, fromMin, 0, 0);
+
+      const endDate = new Date(pickedDate);
+      endDate.setHours(toHour, toMin, 0, 0);
+
+      if (startDate >= endDate) {
+        setApiError("End time must be after start time");
+        setIsSubmitting(false);
+        return;
+      }
+
+      const response = await fetch("/api/reservation/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          parkSlotId: params.spotId,
+          start: startDate.toISOString(),
+          end: endDate.toISOString(),
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => null);
+        throw new Error(error?.error || "Failed to create reservation");
+      }
+
+      await response.json();
+
+      alert(
+        `Reservation confirmed for ${areaName} - Spot ${spotLabel} on ${pickedDate.toDateString()} from ${fromTime} to ${toTime}`
+      );
+      router.push(`/parking-lots/${params.id}/reserve`);
+    } catch (err) {
+      setApiError(
+        err instanceof Error ? err.message : "An error occurred while reserving"
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   // Handler for canceling reservation
   const handleCancelReservation = async () => {
     if (!reservationId) {
@@ -201,6 +278,13 @@ export default function SpotDetailPage() {
       minute: "2-digit",
     });
   }, [activeReservation, freeUntilStatic, isGrace]);
+
+  // Check if reservation has started
+  const hasReservationStarted = useMemo(() => {
+    if (!activeReservation) return false;
+    const start = new Date(activeReservation.start);
+    return start <= new Date();
+  }, [activeReservation]);
 
   return (
     <main className="min-h-screen bg-white">
@@ -314,7 +398,168 @@ export default function SpotDetailPage() {
         {/* RESERVE FOR LATER */}
         {mode === "reserve" && (
           <>
-            {/* RESERVE*/}
+            <section className="bg-gray-100 rounded-2xl p-6 mb-6">
+              <h2 className="text-2xl font-semibold text-black mb-4">
+                Reserve for later:
+              </h2>
+
+              {/* Calendar */}
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-4">
+                  <button
+                    onClick={() => {
+                      setMonthCursor(
+                        new Date(
+                          monthCursor.getFullYear(),
+                          monthCursor.getMonth() - 1,
+                          1
+                        )
+                      );
+                    }}
+                    className="rounded-lg px-3 py-2 text-gray-700 hover:bg-gray-200"
+                  >
+                    ←
+                  </button>
+                  <h3 className="text-lg font-semibold text-black">
+                    {monthCursor.toLocaleDateString("en-US", {
+                      month: "long",
+                      year: "numeric",
+                    })}
+                  </h3>
+                  <button
+                    onClick={() => {
+                      setMonthCursor(
+                        new Date(
+                          monthCursor.getFullYear(),
+                          monthCursor.getMonth() + 1,
+                          1
+                        )
+                      );
+                    }}
+                    className="rounded-lg px-3 py-2 text-gray-700 hover:bg-gray-200"
+                  >
+                    →
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-7 gap-1 mb-2">
+                  {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(
+                    (day) => (
+                      <div
+                        key={day}
+                        className="text-center text-sm font-medium text-gray-600 py-2"
+                      >
+                        {day}
+                      </div>
+                    )
+                  )}
+                </div>
+
+                <div className="grid grid-cols-7 gap-1">
+                  {daysInMonth.map((date, idx) => {
+                    const isToday =
+                      date &&
+                      date.toDateString() === new Date().toDateString();
+                    const isSelected =
+                      date &&
+                      pickedDate &&
+                      date.toDateString() === pickedDate.toDateString();
+                    const todayStart = new Date();
+                    todayStart.setHours(0, 0, 0, 0);
+                    const isPast = date ? date < todayStart : false;
+
+                    return (
+                      <button
+                        key={idx}
+                        onClick={() => {
+                          if (date && !isPast) {
+                            setPickedDate(date);
+                          }
+                        }}
+                        disabled={!date || isPast}
+                        className={`
+                          aspect-square rounded-lg text-sm font-medium
+                          ${!date ? "" : ""}
+                          ${isPast ? "text-gray-300 cursor-not-allowed" : ""}
+                          ${isSelected ? "bg-blue-500 text-white" : ""}
+                          ${!isSelected && !isPast && date
+                            ? "bg-white text-black hover:bg-gray-200"
+                            : ""}
+                          ${isToday && !isSelected
+                            ? "ring-2 ring-blue-300"
+                            : ""}
+                        `}
+                      >
+                        {date ? date.getDate() : ""}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Time selection */}
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    From:
+                  </label>
+                  <input
+                    type="time"
+                    value={fromTime}
+                    onChange={(e) => setFromTime(e.target.value)}
+                    className="w-full bg-white rounded-2xl px-4 py-3 text-black outline-none border border-gray-300"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    To:
+                  </label>
+                  <input
+                    type="time"
+                    value={toTime}
+                    onChange={(e) => setToTime(e.target.value)}
+                    className="w-full bg-white rounded-2xl px-4 py-3 text-black outline-none border border-gray-300"
+                  />
+                </div>
+
+                {/* Price calculation */}
+                {pickedDate && (
+                  <div className="pt-4 border-t border-gray-300">
+                    <div className="flex items-baseline justify-between">
+                      <span className="text-gray-600">Estimated price:</span>
+                      <span className="text-2xl font-semibold text-gray-800">
+                        {(() => {
+                          const [fromHour, fromMin] = fromTime
+                            .split(":")
+                            .map(Number);
+                          const [toHour, toMin] = toTime.split(":").map(Number);
+                          const hours =
+                            (toHour - fromHour + (toMin - fromMin) / 60) || 0.5;
+                          return czk(Math.ceil(hours * pricePerHour));
+                        })()}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </section>
+
+            <div className="flex items-center justify-between pt-8">
+              <Link
+                href={`/parking-lots/${params.id}/reserve`}
+                className="rounded-2xl px-8 py-3 border border-gray-300 text-gray-700 font-medium hover:opacity-90"
+              >
+                Back
+              </Link>
+              <button
+                className="rounded-2xl px-8 py-3 bg-blue-400 text-white font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={handleReserveLater}
+                disabled={isSubmitting || !pickedDate}
+              >
+                {isSubmitting ? "Processing..." : "Confirm Reservation"}
+              </button>
+            </div>
           </>
         )}
 
@@ -323,7 +568,7 @@ export default function SpotDetailPage() {
           <>
             <section className="bg-gray-100 rounded-2xl p-6">
               <h2 className="text-2xl font-semibold text-black mb-4">
-                Parking in progress:
+                {hasReservationStarted ? "Parking in progress:" : "Reservation:"}
               </h2>
 
               {isLoadingReservation ? (
@@ -351,24 +596,42 @@ export default function SpotDetailPage() {
                 </div>
               ) : (
                 <>
-                  {endingSoon && !isGrace && (
-                    <div className="text-red-600 font-semibold text-sm mb-1">
-                      Ending in under 5 minutes
-                    </div>
-                  )}
-                  {isGrace && (
-                    <div className="text-orange-600 font-semibold text-sm mb-1">
-                      Grace period
-                    </div>
-                  )}
-                  <div className={`${isGrace ? 'text-orange-600' : 'text-blue-600'} text-5xl font-bold mb-2`}>
-                    {Math.floor(leftSec / 60)} min{" "}
-                    {String(leftSec % 60).padStart(2, "0")} left
-                  </div>
-                </>
-              )}
-              <div className={`${isGrace ? 'text-orange-600' : 'text-green-600'} font-medium mb-6`}>
-                {isGrace ? 'Grace until' : 'Free until'} {freeUntilActive}
+{endingSoon && !isGrace && (
+  <div className="text-red-600 font-semibold text-sm mb-1">
+    Ending in under 5 minutes
+  </div>
+)}
+
+{isGrace && (
+  <div className="text-orange-600 font-semibold text-sm mb-1">
+    Grace period
+  </div>
+)}
+
+<div className={`${isGrace ? "text-orange-600" : "text-blue-600"} text-5xl font-bold mb-2`}>
+  {Math.floor(leftSec / 60)} min{" "}
+  {String(leftSec % 60).padStart(2, "0")}{" "}
+  {hasReservationStarted ? "left" : "until end"}
+</div>
+
+{!hasReservationStarted && activeReservation && (
+  <div className="text-blue-600 font-medium mb-4">
+    Starts:{" "}
+    {new Date(activeReservation.start).toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    })}
+  </div>
+)}
+
+<div className={`${isGrace ? "text-orange-600" : "text-green-600"} font-medium mb-6`}>
+  {hasReservationStarted
+    ? `Free until ${freeUntilActive}`
+    : `Ends: ${freeUntilActive}`}
+</div>
+
               </div>
 
               <div className="flex gap-4">
