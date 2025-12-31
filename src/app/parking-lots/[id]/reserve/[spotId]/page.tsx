@@ -20,6 +20,10 @@ type ReservationDetail = {
   id: string;
   start: string;
   end: string;
+  serverNow?: string;
+  graceEndsAt?: string;
+  phase?: 'active' | 'grace' | 'expired' | 'cancelled';
+  endingSoon?: boolean;
 };
 
 export default function SpotDetailPage() {
@@ -48,7 +52,7 @@ export default function SpotDetailPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
 
-  // RESERVE LATER state
+  // RESERVE LATER state (feature disabled)
   const today = useMemo(() => new Date(), []);
   const [monthCursor, setMonthCursor] = useState(
     new Date(today.getFullYear(), today.getMonth(), 1)
@@ -60,10 +64,10 @@ export default function SpotDetailPage() {
   const daysInMonth = useMemo(() => {
     const year = monthCursor.getFullYear();
     const month = monthCursor.getMonth();
-    const firstDow = new Date(year, month, 1).getDay(); // 0=Sun
+    const firstDow = new Date(year, month, 1).getDay();
     const count = new Date(year, month + 1, 0).getDate();
     const cells: (Date | null)[] = [];
-    const pad = (firstDow + 6) % 7; // start Monday
+    const pad = (firstDow + 6) % 7;
     for (let i = 0; i < pad; i++) cells.push(null);
     for (let d = 1; d <= count; d++) cells.push(new Date(year, month, d));
     return cells;
@@ -71,6 +75,8 @@ export default function SpotDetailPage() {
 
   // ACTIVE mode – zbývající sekundy podle reservation.end
   const [leftSec, setLeftSec] = useState(0);
+  const [isGrace, setIsGrace] = useState(false);
+  const [endingSoon, setEndingSoon] = useState(false);
   const [activeReservation, setActiveReservation] =
     useState<ReservationDetail | null>(null);
   const [isLoadingReservation, setIsLoadingReservation] = useState(true);
@@ -92,11 +98,14 @@ export default function SpotDetailPage() {
         const data = (await res.json()) as ReservationDetail;
 
         setActiveReservation(data);
-
-        const endMs = new Date(data.end).getTime();
+        const targetMs = data.phase === 'active'
+          ? new Date(data.end).getTime()
+          : data.graceEndsAt ? new Date(data.graceEndsAt).getTime() : new Date(data.end).getTime();
         const nowMs = Date.now();
-        const secs = Math.max(0, Math.floor((endMs - nowMs) / 1000));
+        const secs = Math.max(0, Math.floor((targetMs - nowMs) / 1000));
         setLeftSec(secs);
+        setIsGrace(data.phase === 'grace');
+        setEndingSoon(!!data.endingSoon);
       } catch (e) {
         if ((e as Error).name !== 'AbortError') {
           console.error("Failed to load active reservation", e);
@@ -178,14 +187,6 @@ export default function SpotDetailPage() {
       const endDate = new Date(pickedDate);
       endDate.setHours(toHour, toMin, 0, 0);
 
-      // Validate dates
-      const now = new Date();
-      if (startDate < now) {
-        setApiError("Start time cannot be in the past");
-        setIsSubmitting(false);
-        return;
-      }
-
       if (startDate >= endDate) {
         setApiError("End time must be after start time");
         setIsSubmitting(false);
@@ -207,17 +208,12 @@ export default function SpotDetailPage() {
         throw new Error(error?.error || "Failed to create reservation");
       }
 
-      const data = await response.json();
-      const newReservationId = data.reservation.id;
+      await response.json();
 
-      // Navigate to active view to show the reservation
-      router.push(
-        `/parking-lots/${params.id}/reserve/${params.spotId}?mode=active&name=${encodeURIComponent(
-          areaName
-        )}&pricePerHour=${pricePerHour}&spotLabel=${encodeURIComponent(
-          spotLabel
-        )}&reservationId=${newReservationId}`
+      alert(
+        `Reservation confirmed for ${areaName} - Spot ${spotLabel} on ${pickedDate.toDateString()} from ${fromTime} to ${toTime}`
       );
+      router.push(`/parking-lots/${params.id}/reserve`);
     } catch (err) {
       setApiError(
         err instanceof Error ? err.message : "An error occurred while reserving"
@@ -274,12 +270,14 @@ export default function SpotDetailPage() {
   // free until text v active režimu podle reservation.end
   const freeUntilActive = useMemo(() => {
     if (!activeReservation) return freeUntilStatic;
-    const end = new Date(activeReservation.end);
+    const end = isGrace && activeReservation.graceEndsAt
+      ? new Date(activeReservation.graceEndsAt)
+      : new Date(activeReservation.end);
     return end.toLocaleTimeString("cs-CZ", {
       hour: "2-digit",
       minute: "2-digit",
     });
-  }, [activeReservation, freeUntilStatic]);
+  }, [activeReservation, freeUntilStatic, isGrace]);
 
   // Check if reservation has started
   const hasReservationStarted = useMemo(() => {
@@ -598,13 +596,28 @@ export default function SpotDetailPage() {
                 </div>
               ) : (
                 <>
-                  <div className="text-5xl text-blue-600 font-bold mb-2">
+                  {endingSoon && !isGrace && (
+                    <div className="text-red-600 font-semibold text-sm mb-1">
+                      Ending in under 5 minutes
+                    </div>
+                  )}
+
+                  {isGrace && (
+                    <div className="text-orange-600 font-semibold text-sm mb-1">
+                      Grace period
+                    </div>
+                  )}
+
+                  <div className={`${isGrace ? "text-orange-600" : "text-blue-600"} text-5xl font-bold mb-2`}>
                     {Math.floor(leftSec / 60)} min{" "}
-                    {String(leftSec % 60).padStart(2, "0")} {hasReservationStarted ? "left" : "until end"}
+                    {String(leftSec % 60).padStart(2, "0")}{" "}
+                    {hasReservationStarted ? "left" : "until end"}
                   </div>
+
                   {!hasReservationStarted && activeReservation && (
                     <div className="text-blue-600 font-medium mb-4">
-                      Starts: {new Date(activeReservation.start).toLocaleString("en-US", {
+                      Starts:{" "}
+                      {new Date(activeReservation.start).toLocaleString("en-US", {
                         month: "short",
                         day: "numeric",
                         hour: "2-digit",
@@ -612,11 +625,14 @@ export default function SpotDetailPage() {
                       })}
                     </div>
                   )}
+
+                  <div className={`${isGrace ? "text-orange-600" : "text-green-600"} font-medium mb-6`}>
+                    {hasReservationStarted
+                      ? `Free until ${freeUntilActive}`
+                      : `Ends: ${freeUntilActive}`}
+                  </div>
                 </>
               )}
-              <div className="text-green-600 font-medium mb-6">
-                {hasReservationStarted ? `Free until ${freeUntilActive}` : `Ends: ${freeUntilActive}`}
-              </div>
 
               <div className="flex gap-4">
                 <button

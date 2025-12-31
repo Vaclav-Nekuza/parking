@@ -25,6 +25,11 @@ type ActiveReservation = {
         address: string;
         price: number;
     };
+    // Derived timing fields from API
+    serverNow?: string;
+    graceEndsAt?: string;
+    phase?: 'active' | 'grace';
+    endingSoon?: boolean;
 };
 
 function ParkingLotsPageComponent() {
@@ -112,10 +117,10 @@ function ParkingLotsPageComponent() {
         });
     }
 
-    function getTimeRemaining(endDate: string): string {
+    function getTimeRemaining(endDate: string, graceEndsAt?: string, phase?: 'active' | 'grace'): string {
         const now = new Date();
-        const end = new Date(endDate);
-        const diffMs = end.getTime() - now.getTime();
+        const target = phase === 'grace' && graceEndsAt ? new Date(graceEndsAt) : new Date(endDate);
+        const diffMs = target.getTime() - now.getTime();
 
         if (diffMs <= 0) return 'Expired';
 
@@ -198,9 +203,17 @@ function ParkingLotsPageComponent() {
                                             </div>
                                             <div className="text-right">
                                                 {isParkingNow ? (
-                                                    <div className="text-green-600 font-semibold text-sm">
-                                                        {getTimeRemaining(reservation.end)}
-                                                    </div>
+                                                    <>
+                                                        {reservation.phase === 'grace' && (
+                                                            <div className="text-orange-600 font-semibold text-xs mb-1">Grace period</div>
+                                                        )}
+                                                        {reservation.endingSoon && reservation.phase === 'active' && (
+                                                            <div className="text-red-600 font-semibold text-xs mb-1">Ending in under 5 minutes</div>
+                                                        )}
+                                                        <div className={`${reservation.phase === 'grace' ? 'text-orange-600' : 'text-green-600'} font-semibold text-sm`}>
+                                                            {getTimeRemaining(reservation.end, reservation.graceEndsAt, reservation.phase)}
+                                                        </div>
+                                                    </>
                                                 ) : (
                                                     <div className="text-blue-600 font-semibold text-sm">
                                                         Upcoming
