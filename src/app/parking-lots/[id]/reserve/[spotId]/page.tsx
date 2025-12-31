@@ -596,43 +596,43 @@ export default function SpotDetailPage() {
                 </div>
               ) : (
                 <>
-{endingSoon && !isGrace && (
-  <div className="text-red-600 font-semibold text-sm mb-1">
-    Ending in under 5 minutes
-  </div>
-)}
+                  {endingSoon && !isGrace && (
+                    <div className="text-red-600 font-semibold text-sm mb-1">
+                      Ending in under 5 minutes
+                    </div>
+                  )}
 
-{isGrace && (
-  <div className="text-orange-600 font-semibold text-sm mb-1">
-    Grace period
-  </div>
-)}
+                  {isGrace && (
+                    <div className="text-orange-600 font-semibold text-sm mb-1">
+                      Grace period
+                    </div>
+                  )}
 
-<div className={`${isGrace ? "text-orange-600" : "text-blue-600"} text-5xl font-bold mb-2`}>
-  {Math.floor(leftSec / 60)} min{" "}
-  {String(leftSec % 60).padStart(2, "0")}{" "}
-  {hasReservationStarted ? "left" : "until end"}
-</div>
+                  <div className={`${isGrace ? "text-orange-600" : "text-blue-600"} text-5xl font-bold mb-2`}>
+                    {Math.floor(leftSec / 60)} min{" "}
+                    {String(leftSec % 60).padStart(2, "0")}{" "}
+                    {hasReservationStarted ? "left" : "until end"}
+                  </div>
 
-{!hasReservationStarted && activeReservation && (
-  <div className="text-blue-600 font-medium mb-4">
-    Starts:{" "}
-    {new Date(activeReservation.start).toLocaleString("en-US", {
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    })}
-  </div>
-)}
+                  {!hasReservationStarted && activeReservation && (
+                    <div className="text-blue-600 font-medium mb-4">
+                      Starts:{" "}
+                      {new Date(activeReservation.start).toLocaleString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </div>
+                  )}
 
-<div className={`${isGrace ? "text-orange-600" : "text-green-600"} font-medium mb-6`}>
-  {hasReservationStarted
-    ? `Free until ${freeUntilActive}`
-    : `Ends: ${freeUntilActive}`}
-</div>
-
-              </div>
+                  <div className={`${isGrace ? "text-orange-600" : "text-green-600"} font-medium mb-6`}>
+                    {hasReservationStarted
+                      ? `Free until ${freeUntilActive}`
+                      : `Ends: ${freeUntilActive}`}
+                  </div>
+                </>
+              )}
 
               <div className="flex gap-4">
                 <button
