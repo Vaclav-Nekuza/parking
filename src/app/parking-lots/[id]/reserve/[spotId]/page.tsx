@@ -52,27 +52,6 @@ export default function SpotDetailPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
 
-  // RESERVE LATER state
-  const today = useMemo(() => new Date(), []);
-  const [monthCursor, setMonthCursor] = useState(
-    new Date(today.getFullYear(), today.getMonth(), 1)
-  );
-  const [pickedDate, setPickedDate] = useState<Date | null>(today);
-  const [fromTime, setFromTime] = useState("08:00");
-  const [toTime, setToTime] = useState("08:30");
-
-  const daysInMonth = useMemo(() => {
-    const year = monthCursor.getFullYear();
-    const month = monthCursor.getMonth();
-    const firstDow = new Date(year, month, 1).getDay(); // 0=Sun
-    const count = new Date(year, month + 1, 0).getDate();
-    const cells: (Date | null)[] = [];
-    const pad = (firstDow + 6) % 7; // start Monday
-    for (let i = 0; i < pad; i++) cells.push(null);
-    for (let d = 1; d <= count; d++) cells.push(new Date(year, month, d));
-    return cells;
-  }, [monthCursor]);
-
   // ACTIVE mode – zbývající sekundy podle reservation.end
   const [leftSec, setLeftSec] = useState(0);
   const [isGrace, setIsGrace] = useState(false);
@@ -161,62 +140,6 @@ export default function SpotDetailPage() {
         err instanceof Error
           ? err.message
           : "An error occurred while creating reservation"
-      );
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // Handler for creating reservation (Reserve Later)
-  const handleReserveLater = async () => {
-    if (!pickedDate) {
-      setApiError("Please select a date");
-      return;
-    }
-
-    setIsSubmitting(true);
-    setApiError(null);
-
-    try {
-      const [fromHour, fromMin] = fromTime.split(":").map(Number);
-      const [toHour, toMin] = toTime.split(":").map(Number);
-
-      const startDate = new Date(pickedDate);
-      startDate.setHours(fromHour, fromMin, 0, 0);
-
-      const endDate = new Date(pickedDate);
-      endDate.setHours(toHour, toMin, 0, 0);
-
-      if (startDate >= endDate) {
-        setApiError("End time must be after start time");
-        setIsSubmitting(false);
-        return;
-      }
-
-      const response = await fetch("/api/reservation/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          parkSlotId: params.spotId,
-          start: startDate.toISOString(),
-          end: endDate.toISOString(),
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => null);
-        throw new Error(error?.error || "Failed to create reservation");
-      }
-
-      await response.json();
-
-      alert(
-        `Reservation confirmed for ${areaName} - Spot ${spotLabel} on ${pickedDate.toDateString()} from ${fromTime} to ${toTime}`
-      );
-      router.push(`/parking-lots/${params.id}/reserve`);
-    } catch (err) {
-      setApiError(
-        err instanceof Error ? err.message : "An error occurred while reserving"
       );
     } finally {
       setIsSubmitting(false);
