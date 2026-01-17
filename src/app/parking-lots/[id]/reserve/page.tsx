@@ -191,16 +191,6 @@ export default function ReserveAreaPage() {
             );
           })}
         </div>
-
-        {/* Back button */}
-        <div className="flex justify-start pt-8">
-          <Link 
-            href="/parking-lots" 
-            className="rounded-2xl px-8 py-3 border border-gray-300 text-gray-700 font-medium hover:opacity-90"
-          >
-            Back to areas
-          </Link>
-        </div>
       </div>
     </main>
   );
