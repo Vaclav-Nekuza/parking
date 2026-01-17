@@ -290,12 +290,6 @@ function ParkingLotsPageComponent() {
                                         </Link>
                                     </div>
                                 </div>
-
-                                <div className="mt-4 pt-4 border-t border-gray-100">
-                                    <div className="text-xs text-gray-400">
-                                        Admin ID: {house.adminId}
-                                    </div>
-                                </div>
                             </div>
                         ))}
                     </div>
